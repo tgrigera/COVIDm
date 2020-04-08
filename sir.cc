@@ -1,9 +1,24 @@
 /*
- * sir_mc.cc
+ * sir.cc
  *
- * Simple mean-field SIR with Metropolis Monte Carlo
+ * Monte Carlo simulation of simple mean-field stochastic SIR
  *
- * Choose Metropolis or Gillespie algorithm from the command line
+ * Choose discrete or continuous time (Gillespie) from the command line
+ *
+ * This file is part of COVIDm.
+ *
+ * COVIDm is copyright (C) 2020 by the authors (see file AUTHORS)
+ * 
+ * COVIDm is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License (GPL) as
+ * published by the Free Software Foundation. You can use either
+ * version 3, or (at your option) any later version.
+ * 
+ * COVIDm is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+ * or FITNESS FOR A PARTICULAR PURPOSE.
+ * 
+ * For details see the file LICENSE.
  *
  */
 
@@ -47,26 +62,12 @@ struct opt {
 // Read parameters from command-line and file, and compute
 // derived parameters
 
-template <typename T>
-void read_arg(char *argv[],T& opt)
-{ throw std::runtime_error("unimplemented argument conversion"); }
-
-template <> void read_arg<double>(char *argv[],double& opt)
-{ options.last_arg_read++; opt = atof(argv[options.last_arg_read]); }
-
-template <> void read_arg<int>(char *argv[],int& opt)
-{ options.last_arg_read++; opt = atoi(argv[options.last_arg_read]); }
-
-template <> void read_arg<long>(char *argv[],long& opt)
-{ options.last_arg_read++; opt = atol(argv[options.last_arg_read]); }
-
-template <> void read_arg<char*>(char *argv[],char*& opt)
-{ options.last_arg_read++; opt = argv[options.last_arg_read]; }
+#include "read_arg.hh"
 
 void show_usage(char *prog)
 {
-  std::cout << "usage: " << prog << " [G or M] parameterfile seed N steps\n\n"
-	    << "The first argument is G for Gillespie algorithm or M for Metropolis\n";
+  std::cerr << "usage: " << prog << " [G or M] parameterfile seed N steps\n\n"
+	    << "The first argument is G for Gillespie algorithm or M for discrete-time Monte Carlo\n";
 
   exit(1);
 }
@@ -74,8 +75,9 @@ void show_usage(char *prog)
 char *readbuf(FILE *f)
 {
   static char buf[1000];
+  char *s;
   do
-    fgets(buf,1000,f);
+    s=fgets(buf,1000,f);
   while (*buf=='#');
   return buf;
 }
@@ -118,9 +120,10 @@ void read_parameters(int argc,char *argv[])
 // Simulation
 
 /* 
- * Version with Metropolis MC
+ * Version with discrete-time MC
  *
  */
+
 void run_MC()
 {
   Uniform_real ran(0,1.);
@@ -129,7 +132,7 @@ void run_MC()
   int I=options.I0*options.N;
   int R=options.N-S-I;
 
-  printf("#\n#  Using Metropolis algorithm *****\n");
+  printf("#\n#  Using Monte Carlo algorithm with fixed time steps *****\n");
   printf("#\n#  time    S     I    R\n");
   printf(" 0  %g %g %g\n",(double) S/options.N,(double) I/options.N,(double) R/options.N);
 
@@ -148,6 +151,7 @@ void run_MC()
  * Version with Gillespie (kinetic MC) algorithm
  *
  */
+
 void run_gillespie()
 {
   Uniform_real ran(0,1.);
