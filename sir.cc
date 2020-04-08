@@ -173,6 +173,7 @@ void run_gillespie()
     double pinf=options.beta*I*S/options.N;
     double prec=options.gamma*I;
     double pany=pinf+prec;
+    if (pany==0.) break;
 
     // advance time
     // double deltat=log(1./ran()) / pany;
