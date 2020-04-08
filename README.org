@@ -3,5 +3,18 @@
 
 * Contents
 
- - sir_mc.cc
- - sir.cc
+ - sir :: Simple SIR model (mean field)
+
+* Building
+
+: ./configure
+: make install
+
+* Compile from repository
+
+To compile from a clone of the repository you must first initialize
+autotools as follows:
+
+: autoreconf
+: automake --add-missing
+: autoreconf
