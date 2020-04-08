@@ -13,8 +13,6 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-    - name: configure1
-      run: autoreconf
     - name: automake
       run: automake --add-missing
     - name: autoconf2
