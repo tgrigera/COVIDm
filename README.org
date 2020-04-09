@@ -1,9 +1,20 @@
 
+This repository contains C++ code to simulate several epidemiological
+models, with emphasis on those most useful to model COVID19.
 
 
 * Contents
 
- - sir :: Simple SIR model (mean field)
+All models mentioned below are implemented in their stochastic
+variants.
+
+ - sir :: Simple fully-connected SIR model.  The simplest
+   implementation, mostly useful as check for other programs.
+
+ - sir_m :: The same fully-connected SIR as in =sir= but with the
+   option to do multiple runs and compute mean and variance across
+   realizations of the stochastic dynamcis.
+
 
 * Building
 
@@ -28,4 +39,3 @@ To compile from a clone of the repository you need to install
 : autoreconf -if
 
 then proceed with ~configure~ and ~make~ as above.
-
