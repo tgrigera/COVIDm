@@ -5,9 +5,11 @@
 #
 # Process this file with autoconf to produce a configure script.
 
-bin_PROGRAMS = sir sir_m
+bin_PROGRAMS = sir sir_m sir_f
 
 sir_SOURCES = sir.cc qdrandom.cc
+
+sir_f_SOURCES = sir_f.cc popstate.cc geoave.cc qdrandom.cc
 
 sir_m_SOURCES = sir_m.cc popstate.cc geoave.cc qdrandom.cc
 

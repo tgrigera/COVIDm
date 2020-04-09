@@ -15,6 +15,9 @@ variants.
    option to do multiple runs and compute mean and variance across
    realizations of the stochastic dynamcis.
 
+ - sir_f :: A SIR with population divided in families, and different
+   in- and out-of-family transmission rates.
+
 
 * Building
 

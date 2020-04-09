@@ -75,7 +75,9 @@ static int nargs=6;
 void show_usage(char *prog)
 {
   std::cerr << "usage: " << prog << " [G or M] parameterfile seed N steps Nruns\n\n"
-	    << "The first argument is G for Gillespie algorithm or M for discrete-time Monte Carlo\n";
+	    << "The first argument is G for Gillespie algorithm or M for discrete-time Monte Carlo\n"
+            << "Discrete-time was introduced as a fast way to do checks on new models, but in production\n"
+	    << "Gillespie should be used\n";
 
   exit(1);
 }
@@ -96,7 +98,7 @@ void read_parameters(int argc,char *argv[])
 
   char *A;
   read_arg(argv,A);
-  options.gillespie= (*A=='G');
+  options.gillespie= (*A!='M');
   read_arg(argv,options.ifile);
   read_arg(argv,options.seed);
   read_arg(argv,options.N);
