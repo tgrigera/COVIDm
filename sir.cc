@@ -195,14 +195,6 @@ void run_gillespie()
     }
 
   }
-
- for (int t=1; t<=options.steps; ++t) {
-    for (int i=0; i<S; ++i)
-      if (ran()<options.beta*S/options.N) { --S; ++I; }
-    for (int i=0; i<I; ++i)
-      if (ran()<options.gamma) { --I; ++R; }
-
-  }
 }
 
 

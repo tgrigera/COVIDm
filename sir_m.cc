@@ -26,7 +26,6 @@
  *
  */
 
-
 #include <iostream>
 #include <cstdio>
 #include <math.h>
@@ -36,6 +35,8 @@
 
 #include "qdrandom.hh"
 #include "popstate.hh"
+
+#undef LATTICE_MC
 
 ///////////////////////////////////////////////////////////////////////////////
 //
@@ -139,16 +140,47 @@ void run_MC(SIRstate *state)
   int S=options.S0*options.N;
   int I=options.I0*options.N;
   int R=options.N-S-I;
+  double fS=(double) S/options.N;
+  double fI=(double) I/options.N;
+  double fR=(double) R/options.N;
 
-  state->push(0,(double) S/options.N,(double) I/options.N,(double) R/options.N);
+  state->push(0,fS,fI,fR);
+
+#ifdef LATTICE_MC
+  short *lat=new short[options.N];
+  int n=0;
+  while (n<S) lat[n++]=0;
+  while (n<S+I) lat[n++]=1;
+  while (n<S+I+R) lat[n++]=2;
+
+  for (int t=1; t<=options.steps; ++t) {
+    for (n=0; n<options.N; n++)
+      switch(lat[n]) {
+      case 0:         // susceptible
+  	if (ran()<options.beta*fI)
+  	  { lat[n]=1; --S; ++I; }
+  	break;
+      case 1:         // infected
+  	if (ran()<options.gamma)
+  	  { lat[n]=2; --I; ++R; }
+  	break;
+      }
+
+    fS=(double) S/options.N;
+    fI=(double) I/options.N;
+    fR=(double) R/options.N;
+    state->push(t,fS,fI,fR);
+  }
+  delete[] lat;
+#else
   for (int t=1; t<=options.steps; ++t) {
     for (int i=0; i<S; ++i)
       if (ran()<options.beta*I/options.N) { --S; ++I; }
     for (int i=0; i<I; ++i)
       if (ran()<options.gamma) { --I; ++R; }
-
     state->push(t,(double) S/options.N,(double) I/options.N,(double) R/options.N);
   }
+#endif
 }
 
 
@@ -179,7 +211,6 @@ void run_gillespie(SIRstate *state)
     if (pany==0.) break;
 
     // advance time
-    // double deltat=log(1./ran()) / pany;
     double deltat=rexp(1./pany);
     time+=deltat;
 
@@ -196,14 +227,6 @@ void run_gillespie(SIRstate *state)
       last=time;
       state->push(time,(double) S/options.N,(double) I/options.N,(double) R/options.N);
     }
-
-  }
-
-  for (int t=1; t<=options.steps; ++t) {
-    for (int i=0; i<S; ++i)
-      if (ran()<options.beta*S/options.N) { --S; ++I; }
-    for (int i=0; i<I; ++i)
-      if (ran()<options.gamma) { --I; ++R; }
 
   }
 }
