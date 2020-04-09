@@ -7,14 +7,25 @@
 
 * Building
 
+If you download a release tarball, it's enough to do
+
 : ./configure
-: make install
+: make
+: sudo make install
 
-* Compile from repository
+This installs in =/usr/local=, you can give =--prefix= to the
+~configure~ script to change this.  The development versions of the
+following libraries are required to build, you will get a configure
+error if they are missing:
 
-To compile from a clone of the repository you must first initialize
-autotools as follows:
+ - GNU Scientific library
 
-: autoreconf
-: automake --add-missing
-: autoreconf
+** Compile from repository
+
+To compile from a clone of the repository you need to install
+=autotools=.  First generate the ~configure~ script with
+
+: autoreconf -if
+
+then proceed with ~configure~ and ~make~ as above.
+
