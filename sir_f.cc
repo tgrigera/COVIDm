@@ -1,10 +1,8 @@
 /*
  * sir_f.cc
  *
- * Monte Carlo simulation of stochastic SIR with population separated
- * in families.
- *
- * Choose discrete or continuous time (Gillespie) from the command line
+ * Stochastic SIR with population separated in families, simulated in
+ * continuous time (Gillespie algorithm).
  *
  * This file is part of COVIDm.
  *
@@ -32,8 +30,6 @@
 
 #include "qdrandom.hh"
 #include "popstate.hh"
-
-#define LATTICE_MC
 
 ///////////////////////////////////////////////////////////////////////////////
 //
@@ -115,108 +111,175 @@ void read_parameters(int argc,char *argv[])
 //
 // Simulation
 
+
+/*
+ * Global and family state
+ *
+ */
 struct Gstate {
   int    N;         // Total population
   int    S,I,R;     // Total in state S,I,R
 } gstate;
 
-struct Fstate {
+struct Family {
   int  M;
   int  S,I,R;
 } ;
 
-std::vector <Fstate> families;
-
-void create_families()
+std::ostream& operator<<(std::ostream& o,const Family &f)
 {
-  Uniform_real ran(0,1.);
-  Fstate fam;
-
-  double pI=options.I0;       // pI = probability of infection at t=0
-  double pR=1-options.S0;     // pR = pI + probability of recovered at t=0
-
-  gstate.N=gstate.S=gstate.I=gstate.R=0;
-
-  for (int f=0; f<options.Nfamilies; ++f) {
-    fam.S=fam.M=options.M;
-    fam.I=fam.R=0;
-    for (int i=0; i<fam.S; ++i) {
-      double r=ran();
-      if (r<pI) {fam.S--; fam.I++;}
-      else if (r<pR) {fam.S--; fam.R++;}
-    }
-    gstate.N+=fam.M;
-    gstate.S+=fam.S;
-    gstate.I+=fam.I;
-    gstate.R+=fam.R;
-    families.push_back(fam);
-  }
-
-  printf("# N     = %d\n",gstate.N);
+  std::cout << "M = " << f.M  << " S,I,R = " << f.S << ' ' << f.I << ' ' << f.R;
+  return o;
 }
 
-/* 
- * Version with discrete-time MC
+/*
+ * class Population holds per family information, computes rates and
+ * performs individual state switchs (function event)
  *
  */
+class Population {
+public:
+  Population(int NFamilies,double beta_in,double beta_out,double gamma,int M);
+  void infect(int f);  // Infect someone in family f
+  void compute_rates();
+  void event(int f,double r);
+  void set_all_S();
+  
+  double beta_in,beta_out,gamma;
+  int M;
 
-#ifdef LATTICE_MC
-void run(SIRstate *state)
+  struct Gstate gstate;
+  std::vector<Family> families;
+  std::vector<double> cumrate;
+  double              total_rate;
+} ;
+		 
+Population::Population(int NFamilies,double beta_in,double beta_out,double gamma,int M) :
+  beta_in(beta_in),
+  beta_out(beta_out),
+  gamma(gamma),
+  M(M)
 {
-  Uniform_real ran(0,1.);
+  gstate.N=gstate.S=gstate.I=gstate.R=0;
 
-  create_families();
-  double fS=(double) gstate.S/gstate.N;
-  double fI=(double) gstate.I/gstate.N;
-  double fR=(double) gstate.R/gstate.N;
+  Family fam;
+
+  for (int f=0; f<NFamilies; ++f) {
+    fam.S=fam.M=M;
+    fam.I=fam.R=0;
+    gstate.N+=fam.M;
+    gstate.S+=fam.S;
+    families.push_back(fam);
+  }
+  cumrate.resize(families.size()+1,0.);
+}
+
+inline void Population::infect(int f)  // Infect someone in family f
+{
+  families[f].S--;
+  families[f].I++;
+  gstate.S--;
+  gstate.I++;
+}
+
+void Population::set_all_S()
+{
+  gstate.S=gstate.N;
+  gstate.I=gstate.R=0;
+
+  for (auto &f: families) {
+    f.S=f.M;
+    f.I=f.R=0;
+  }
+}
+
+/*
+ * compute_rates() computes the cumulative rates for all families,
+ * event performs the inteded state change within the given family,
+ * given a random number that is compared to the individual rates
+ *
+ */
+void Population::compute_rates()
+{
+  double cr=0;
+  cumrate[0]=0;
+  for (int f=0; f<families.size(); ++f) {
+    cr += families[f].S * (beta_out*gstate.I/gstate.N + beta_in*families[f].I/families[f].M ) +
+      families[f].I*gamma;
+    cumrate[f+1]=cr;
+  }
+  total_rate=cr;
+}
+
+void Population::event(int f,double r)   // Do infection or recovery on family f
+{
+  double rr = families[f].I*gamma;
+
+  if (r<rr) {                   // recovery
+    families[f].I--;
+    gstate.I--;
+    families[f].R++;
+    gstate.R++;
+  } else {                      // infection
+    families[f].S--;
+    gstate.S--;
+    families[f].I++;
+    gstate.I++;
+  }
+}
+
+void run(Population &pop,SIRstate *state)
+{
+  double fS=(double) pop.gstate.S/pop.gstate.N;
+  double fI=(double) pop.gstate.I/pop.gstate.N;
+  double fR=(double) pop.gstate.R/pop.gstate.N;
 
   state->push(0,fS,fI,fR);
 
-  for (int t=1; t<=options.steps; ++t) {
+  double time=0;
+  double last=0;
+  Exponential_distribution rexp;
+  Uniform_real ran(0,1.);
 
-    double pinf_ext=options.beta_out*fI;
+  while (time<options.steps) {
 
-    for (int f=1; f<families.size(); ++f) {
-      int Sfam=families[f].S;
-      int Ifam=families[f].I;
-      for (int i=0; i<Sfam; ++i) {
-	double pinf=pinf_ext + options.beta_in*Ifam/families[f].M;
-	if (ran()<pinf) {
-	  families[f].S--;
-	  families[f].I++;
-	  gstate.S--;
-	  gstate.I++;
-	}
-      }
-      for (int i=0; i<Ifam; ++i)
-	if (ran()<options.gamma) {
-	  families[f].I--;
-	  families[f].R++;
-	  gstate.I--;
-	  gstate.R++;
-	}
+    // compute transition probabilities
+    pop.compute_rates();
+    double mutot=pop.total_rate;
+    if (mutot==0.) break;
+
+    // advance time
+    double deltat=rexp(1./mutot);
+    time+=deltat;
+
+    // choose the transition and apply it
+    double r=ran()*mutot;
+    int f=0;
+    while (pop.cumrate[f]<r) ++f;    // choose family
+    f--;
+    // std::cout << "r fam " <<r  << ' ' << f<< " cumrate f-1 f f+1 "
+    // 	      << pop.cumrate[f-1] << ' '
+    // 	      << pop.cumrate[f] << ' '
+    // 	      << pop.cumrate[f+1] << ' '
+    // 	      <<"\n r-cumrate " 
+    // 	      << r-pop.cumrate[f-1] << ' '
+    // 	      << r-pop.cumrate[f] << ' '
+    // 	      << r-pop.cumrate[f+1] << ' '
+    // 	      <<"\n cumrate " 
+    // 	      <<'\n';
+    pop.event(f,r-pop.cumrate[f]);       // choose and apply event
+    
+    if (time>last+1.) {
+      last=time;
+      fS=(double) pop.gstate.S/pop.gstate.N;
+      fI=(double) pop.gstate.I/pop.gstate.N;
+      fR=(double) pop.gstate.R/pop.gstate.N;
+
+      state->push(time,fS,fI,fR);
     }
 
-     fS=(double) gstate.S/gstate.N;
-     fI=(double) gstate.I/gstate.N;
-     fR=(double) gstate.R/gstate.N;
-     state->push(t,fS,fI,fR);
   }
 }
-
-#else
-
-/*
- * Version with Gillespie (kinetic MC) algorithm
- *
- */
-
-void run(SIRstate *state)
-{
-  std::cerr << "Unimplemented\n";
-}
-
-#endif /* LATTICE_MC */
 
 ///////////////////////////////////////////////////////////////////////////////
 //
@@ -226,22 +289,29 @@ int main(int argc,char *argv[])
 {
   read_parameters(argc,argv);
   Random_number_generator RNG(options.seed);
+  Uniform_real ran(0,1);
 
+  // Prepare global state (for output) and population
   SIRstate *state;
   state = options.Nruns>1 ?
     new SIRstate_av : new SIRstate;
+  Population pop(options.Nfamilies,options.beta_in,options.beta_out,options.gamma,options.M);
 
-#ifdef LATTICE_MC
-  std::cout << "#\n# ***** Using Monte Carlo algorithm with fixed time steps *****\n";
-#else
-  std::cout << "#\n# ***** Using Gillespie algorithm *****\n";
-#endif
-
+  std::cout << "# N = " << pop.gstate.N << '\n';
   std::cout << state->header() << '\n';
 
   // Do runs and print results
-  for (int n=0; n<options.Nruns; ++n)
-    run(state);
+  for (int n=0; n<options.Nruns; ++n) {
+    // seed infected
+    pop.set_all_S();
+    for (int f=0; f<pop.families.size(); ++f) {
+      for (int i=0; i<pop.families[f].M; ++i)
+	if (ran()<options.I0) pop.infect(f);
+    }
+
+    // run and accumulate averages
+    run(pop,state);
+  }
 
   if (options.Nruns>1)
     std::cout << *state;
