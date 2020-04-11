@@ -30,6 +30,8 @@
 
 #include "qdrandom.hh"
 #include "popstate.hh"
+#include "bsearch.hh"
+
 
 ///////////////////////////////////////////////////////////////////////////////
 //
@@ -153,18 +155,19 @@ public:
 	     int Mmmax,double PM[]);
   ~Population() { delete Mdist;}
   
-  void infect(int f);  // Infect someone in family f
-  void compute_rates();
-  void event(int f,double r);
-  void set_all_S();
   void rebuild_families();
+  void set_all_S();
+  void compute_rates();      // compute all rates from scratch
+  void event(int f,double r);  // perform an event in family f, update family's rates
+  void infect(int f);          // Force infection in family f (unless no susceptibles)
   
   double beta_in,beta_out,gamma;
   int    NFamilies,Mmax;
   Discrete_distribution *Mdist;
 
-  struct Gstate gstate;
+  Gstate              gstate;
   std::vector<Family> families;
+
   std::vector<double> cumrate;
   double              total_rate;
 } ;
@@ -201,6 +204,7 @@ void Population::rebuild_families()
 
 inline void Population::infect(int f)  // Infect someone in family f
 {
+  if (families[f].S==0) return;
   families[f].S--;
   families[f].I++;
   gstate.S--;
@@ -226,17 +230,17 @@ void Population::set_all_S()
  */
 void Population::compute_rates()
 {
-  double cr=0;
   cumrate[0]=0;
   for (int f=0; f<families.size(); ++f) {
-    cr += families[f].S * (beta_out*gstate.I/gstate.N + beta_in*families[f].I/families[f].M ) +
+    double famrate = families[f].S * (beta_out*gstate.I/gstate.N + beta_in*families[f].I ) +
       families[f].I*gamma;
-    cumrate[f+1]=cr;
+    cumrate[f+1]=cumrate[f]+famrate;
   }
-  total_rate=cr;
+  total_rate=cumrate[families.size()];
 }
 
 void Population::event(int f,double r)   // Do infection or recovery on family f
+                                         // and update the family rate
 {
   double rr = families[f].I*gamma;
 
@@ -279,20 +283,8 @@ void run(Population &pop,SIRstate *state)
 
     // choose the transition and apply it
     double r=ran()*mutot;
-    int f=0;
-    while (pop.cumrate[f]<r) ++f;    // choose family
-    f--;
-    // std::cout << "r fam " <<r  << ' ' << f<< " cumrate f-1 f f+1 "
-    // 	      << pop.cumrate[f-1] << ' '
-    // 	      << pop.cumrate[f] << ' '
-    // 	      << pop.cumrate[f+1] << ' '
-    // 	      <<"\n r-cumrate " 
-    // 	      << r-pop.cumrate[f-1] << ' '
-    // 	      << r-pop.cumrate[f] << ' '
-    // 	      << r-pop.cumrate[f+1] << ' '
-    // 	      <<"\n cumrate " 
-    // 	      <<'\n';
-    pop.event(f,r-pop.cumrate[f]);       // choose and apply event
+    int f=bsearch(r,pop.cumrate);      // choose family
+    pop.event(f,r-pop.cumrate[f]);     // choose and apply event
     
     if (time>last+1.) {
       last=time;
