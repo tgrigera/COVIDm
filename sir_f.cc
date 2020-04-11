@@ -44,11 +44,13 @@ struct opt {
   long   seed;
 
   int    Nfamilies; // Total number of families
-  int    M;
+  int    Mmax;
+  double *PM;
   double beta_in,beta_out,gamma;
   double S0,I0;      // initial susceptible / infected fraction  
 
   opt() : last_arg_read(0) {}
+  ~opt() {delete[] PM;}
 
 } options;
 
@@ -89,7 +91,13 @@ void read_parameters(int argc,char *argv[])
   FILE *f=fopen(options.ifile,"r");
   if (f==0) throw std::runtime_error(strerror(errno));
   char *buf=readbuf(f);
-  sscanf(buf,"%d %d",&options.Nfamilies,&options.M);
+  sscanf(buf,"%d %d",&options.Nfamilies,&options.Mmax);
+  options.PM=new double[options.Mmax+1];
+  options.PM[0]=0;
+  for (int M=1; M<=options.Mmax; ++M) {
+    buf=readbuf(f);
+    sscanf(buf,"%lg",options.PM+M);
+  }
   buf=readbuf(f);
   sscanf(buf,"%lg %lg %lg",&options.beta_in,&options.beta_out,&options.gamma);
   buf=readbuf(f);
@@ -101,7 +109,9 @@ void read_parameters(int argc,char *argv[])
   printf("# beta_out = %g\n",options.beta_out);
   printf("# gamma = %g\n",options.gamma);
   printf("# Nfamilies = %d\n",options.Nfamilies);
-  printf("# M         = %d\n",options.M);
+  printf("# Mmax      = %d\n",options.Mmax);
+  for (int i=1; i<=options.Mmax; ++i)
+    printf("# P[%d]    = %g\n",i,options.PM[i]);
   printf("# S0 = %g\n",options.S0);
   printf("# I0 = %g\n",options.I0);
   printf("# Nruns = %d\n",options.Nruns);
@@ -139,14 +149,19 @@ std::ostream& operator<<(std::ostream& o,const Family &f)
  */
 class Population {
 public:
-  Population(int NFamilies,double beta_in,double beta_out,double gamma,int M);
+  Population(int NFamilies,double beta_in,double beta_out,double gamma,
+	     int Mmmax,double PM[]);
+  ~Population() { delete Mdist;}
+  
   void infect(int f);  // Infect someone in family f
   void compute_rates();
   void event(int f,double r);
   void set_all_S();
+  void rebuild_families();
   
   double beta_in,beta_out,gamma;
-  int M;
+  int    NFamilies,Mmax;
+  Discrete_distribution *Mdist;
 
   struct Gstate gstate;
   std::vector<Family> families;
@@ -154,18 +169,28 @@ public:
   double              total_rate;
 } ;
 		 
-Population::Population(int NFamilies,double beta_in,double beta_out,double gamma,int M) :
+Population::Population(int NFamilies,double beta_in,double beta_out,double gamma,int Mmax,
+		       double *P) :
   beta_in(beta_in),
   beta_out(beta_out),
   gamma(gamma),
-  M(M)
+  NFamilies(NFamilies),
+  Mmax(Mmax),
+  Mdist(0)
+{
+  Mdist = new Discrete_distribution(Mmax+1,P);
+  rebuild_families();
+}
+
+void Population::rebuild_families()
 {
   gstate.N=gstate.S=gstate.I=gstate.R=0;
 
   Family fam;
+  families.clear();
 
   for (int f=0; f<NFamilies; ++f) {
-    fam.S=fam.M=M;
+    fam.S=fam.M=(*Mdist)();
     fam.I=fam.R=0;
     gstate.N+=fam.M;
     gstate.S+=fam.S;
@@ -295,7 +320,8 @@ int main(int argc,char *argv[])
   SIRstate *state;
   state = options.Nruns>1 ?
     new SIRstate_av : new SIRstate;
-  Population pop(options.Nfamilies,options.beta_in,options.beta_out,options.gamma,options.M);
+  Population pop(options.Nfamilies,options.beta_in,options.beta_out,options.gamma,
+		 options.Mmax,options.PM);
 
   std::cout << "# N = " << pop.gstate.N << '\n';
   std::cout << state->header() << '\n';

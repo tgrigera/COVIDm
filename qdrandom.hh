@@ -201,9 +201,11 @@ inline double Exponential_distribution::operator()(double mu_)
   return gsl_ran_exponential(generator,mu_);
 }
 
-/*****************************************************************************/
-
-// Vectors on the unit sphere
+/*****************************************************************************
+ *
+ * Vectors on the unit sphere
+ *
+ */
 
 class Spherical3d_distribution : public rdbase_double {
 public:
@@ -225,5 +227,26 @@ inline void Spherical3d_distribution::operator()(double *r)
   gsl_ran_dir_3d(generator,r,r+1,r+2);
 }
 
+/*****************************************************************************
+ *
+ * Discrete events (integers) with arbitrary probabilities
+ *
+ */
+
+class Discrete_distribution : public rdbase_ulong {
+public:
+  
+  Discrete_distribution(long K,double *P) 
+  { table=gsl_ran_discrete_preproc(K,P); }
+
+  ~Discrete_distribution()
+  { gsl_ran_discrete_free(table); }
+  
+  unsigned long operator()()
+  { return gsl_ran_discrete(generator,table); }
+  
+private:
+  gsl_ran_discrete_t *table;
+} ;
 
 #endif /* QDRANDOM_HH */
