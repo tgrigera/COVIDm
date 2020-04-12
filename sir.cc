@@ -170,7 +170,7 @@ void run_gillespie()
   while (time<options.steps) {
 
     // compute transition probabilities
-    double pinf=options.beta*I*S/options.N;
+    double pinf=options.beta*I*S/(options.N-1);
     double prec=options.gamma*I;
     double pany=pinf+prec;
     if (pany==0.) break;

@@ -49,7 +49,7 @@ struct opt {
   int    Mmax;
   double *PM;
   double beta_in,beta_out,gamma;
-  double S0,I0;      // initial susceptible / infected fraction  
+  double I0;      // initial infected fraction  
 
   opt() : last_arg_read(0) {}
   ~opt() {delete[] PM;}
@@ -103,7 +103,7 @@ void read_parameters(int argc,char *argv[])
   buf=readbuf(f);
   sscanf(buf,"%lg %lg %lg",&options.beta_in,&options.beta_out,&options.gamma);
   buf=readbuf(f);
-  sscanf(buf,"%lg %lg",&options.S0,&options.I0);
+  sscanf(buf,"%lg",&options.I0);
   fclose(f);
 
   printf("##### Parameters\n");
@@ -114,7 +114,6 @@ void read_parameters(int argc,char *argv[])
   printf("# Mmax      = %d\n",options.Mmax);
   for (int i=1; i<=options.Mmax; ++i)
     printf("# P[%d]    = %g\n",i,options.PM[i]);
-  printf("# S0 = %g\n",options.S0);
   printf("# I0 = %g\n",options.I0);
   printf("# Nruns = %d\n",options.Nruns);
 }
@@ -230,9 +229,10 @@ void Population::set_all_S()
  */
 void Population::compute_rates()
 {
+  int N1=gstate.N-1;
   cumrate[0]=0;
   for (int f=0; f<families.size(); ++f) {
-    double famrate = families[f].S * (beta_out*gstate.I/gstate.N + beta_in*families[f].I ) +
+    double famrate = families[f].S * (beta_out*gstate.I/N1 + beta_in*families[f].I ) +
       families[f].I*gamma;
     cumrate[f+1]=cumrate[f]+famrate;
   }
