@@ -19,6 +19,21 @@ variants.
    in- and out-of-family transmission rates.
 
 
+* Models
+
+** Simple mean field SIR
+
+The population is composed of \(N\) indistinguishable individuals,
+each interacting equally with all the others.  An individual can be in
+one of three states S (susceptible), I (infected) or R (recovered).
+The dynamics is defined by the transition rates
+
+\[  W^{(i)}_{S\to I} = \beta \frac{N_I}{N-1} \]
+\[  W^{(i)}_{I\to R} = \gamma \]
+
+
+
+
 * Building
 
 If you download a release tarball, it's enough to do

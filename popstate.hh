@@ -1,6 +1,6 @@
 /*
  * popstate.hh -- structures to record, print and average the
- *                epidemiological state of the whole population.
+ *                (global) epidemiological state of the whole population.
  *
  * This file is part of COVIDm.
  *
@@ -27,6 +27,12 @@
 
 #include "geoave.hh"
 
+//
+// Print source context (for debugging)
+#define I_AM_HERE \
+  std::cerr << "(DD) Reached " << __FILE__ << ":" << __LINE__ << " (in function " \
+  <<	 __func__ << ")\n";
+
 ///////////////////////////////////////////////////////////////////////////////
 //
 // Population_state
@@ -43,8 +49,10 @@ public:
   std::vector<double> S,E,I,R;
 
 protected:
+  void create_colnums(int);
   void addSIRhdr();
   std::string hdr;
+  std::string colnums;
 } ;
 	       
 inline Population_state::Population_state(int NS,int NE,int NI,int NR) :
@@ -89,5 +97,55 @@ private:
   Geoave Sav,Iav,Rav;
 
 } ;
+
+///////////////////////////////////////////////////////////////////////////////
+//
+// SEEIIRstate
+
+struct SEEIIRistate {
+  int    N;                  // Total population
+  int    S,E1,E2,I1,I2,R;    // Total in states SEIR
+  // cumulative infections by type
+  int    inf_imported,inf_close,inf_community;
+} ;
+
+
+class SEEIIRstate : public Population_state {
+public:
+  SEEIIRstate() :
+    Population_state(1,2,2,1) {}
+  const char* header();
+  virtual void push(double time,SEEIIRistate &s);
+} ;
+
+
+///////////////////////////////////////////////////////////////////////////////
+//
+// SEEIIRstate_av
+
+class SEEIIRstate_av : public SEEIIRstate {
+public:
+  SEEIIRstate_av(double deltat=1.) :
+    SEEIIRstate(),
+    Sav(-0.5*deltat,1.,deltat),
+    E1av(-0.5*deltat,1.,deltat),
+    E2av(-0.5*deltat,1.,deltat),
+    I1av(-0.5*deltat,1.,deltat),
+    I2av(-0.5*deltat,1.,deltat),
+    Rav(-0.5*deltat,1.,deltat),
+    Impav(-0.5*deltat,1.,deltat),
+    Closeav(-0.5*deltat,1.,deltat),
+    Commav(-0.5*deltat,1.,deltat)
+  {}
+
+  const char* header();
+  void print(std::ostream&,bool print_time=true);
+  void push(double time,SEEIIRistate &s);
+
+private:
+  Geoave Sav,E1av,E2av,I1av,I2av,Rav,Impav,Closeav,Commav;
+  int N_;
+} ;
+
 
 #endif /* POPSTATE_HH */

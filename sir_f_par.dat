@@ -1,0 +1,12 @@
+# Nfamilies   Mmax
+  1000       5
+ 0.
+ 0.
+ 0.
+ 0.
+ 1.
+# beta_in beta_out gamma
+ 0.04  0.01        0.07
+#  I0 (fraction initially infected)
+ 1e-5
+ 

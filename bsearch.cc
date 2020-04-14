@@ -48,29 +48,3 @@ int bsearch(double r,int N,double crates[])
   }
   return i;
 }
-
-/*
- * int bsearch(double rstd::vector<double> &crates)
- *
- * input: 
- *  - crates : cumulative rates (sorted ascending)
- *  - r      : number between 0 and crates.back()
- *
- * return:
- *  - index n such that  crates[n] < r <= crates[n+1]
- *
- */
-
-int bsearch(double r,std::vector<double> &crates)
-{
-  int i=0;
-  int j=crates.size()-1;
-
-  while (j!=i+1) {
-    int k= i + (j-i)/2;
-    if ( crates[k] < r ) i=k;
-    else j=k;
-  }
-  return i;
-}
-
