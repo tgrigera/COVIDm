@@ -211,7 +211,7 @@ void SEIRPopulation::add_imported(int I)
   std::vector<int> inf;
   for (int i=0; i<I; ++i) {
     int Sn;
-    do Sn=(*ran)(gstate.S);
+    do Sn=(*ran)(gstate.S)+1;
     while ( std::find(inf.begin(),inf.end(),Sn)!=inf.end() ) ;
     inf.push_back(Sn);
   }

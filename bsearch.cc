@@ -39,12 +39,12 @@
 int bsearch(double r,int N,double crates[])
 {
   int i=0;
-  int j=N-1;
+  int j=N;
 
-  while (j!=i+1) {
-    int k= i + (j-i)/2;
-    if ( crates[k] < r ) i=k;
+  while (i<j) {
+    int k= (i+j)/2;
+    if ( crates[k] < r ) i=k+1;
     else j=k;
   }
-  return i;
+  return i-1;
 }

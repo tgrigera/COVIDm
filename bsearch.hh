@@ -39,14 +39,14 @@ template <typename T>
 size_t bsearch(T r,std::vector<T> &crates)
 {
   size_t i=0;
-  size_t j=crates.size()-1;
+  size_t j=crates.size();
 
-  while (j!=i+1) {
-    int k= i + (j-i)/2;
-    if ( crates[k] < r ) i=k;
+  while (i<j) {
+    int k= (i+j)/2;
+    if ( crates[k] < r ) i=k+1;
     else j=k;
   }
-  return i;
+  return i-1;
 }
 
 #endif /* BSEARCH_HH */
