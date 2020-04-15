@@ -1,12 +1,53 @@
 /*
  * seeiir_main.cc
  *
- * This is the driver for SEEIIR simulation (main and parameter
- * reading).  Use the #defines below (SEEIIR_IMPLEMENTATION) to choose
- * an imlementation.
- *
  * Stochastic SEIR with two E and to I states.  Population separated
  * in families.  Simulated in continuous time (Gillespie algorithm).
+ *
+ * This is the driver for SEEIIR simulation (main and parameter
+ * reading).  Use the #defines below (SEEIIR_IMPLEMENTATION) to choose
+ * an implementation.  Implementations are included from files
+ * seeir_i?.cc.
+ *
+ * In this model the states are S->E1->E2->I1->I2->R.  Exposed
+ * individuals are those that will developthe illness but are still
+ * not contagious (maybe not symptomatic).  The two E and I states are
+ * completely identical, the serve to produce a non-exponential decay
+ * from E to I and from I to R.  Individuals are grouped in families,
+ * and a different infection probability is assigned to in-familiy and
+ * out-of family contacts.  The transition rates (per individual) are
+ *
+ *  W(S->E1) = beta_out * (I1+I2) / (N-1)  + beta_in * (I1[f] + I2[f])
+ *  W(E1->E2) = 2 + sigma
+ *  W(E2->I1) = 2 + sigma
+ *  W(I1->I2) = 2 + gamma
+ *  W(I2->R) = 2 + gamma
+ *
+ * where N is the number of individuals, I1 and I2 the total number of
+ * individuals in those states, and I1[f] the number of individuals in
+ * state I1 belonging to the same family as the individual whose rate
+ * is being computed.
+ *
+ * Command-line argumets are parameter file, seed, maximum time,
+ * number of runs.  If number of runs is greater than 1, output is the
+ * average and variance over all runs.  Ouput is to stdout.
+ *
+ * The parameter file specifies the number of families and the
+ * distribution of family sizes (see seeiir_par.dat for the format),
+ * the rate constants beta_in, beta_out, sigma, and gamma, and a file
+ * to read imported infections.
+ *
+ * The population is initialized to all S, so infected individuals
+ * must be introduced in order to start the epidemic.  The external
+ * infections are read from a two-column file (see
+ * imported_infections.dat) giving time and number of imported cases.
+ * The second column is interpreted as giving cumulative total cases,
+ * not new cases.  At the specifed time a number of S individuals are
+ * forced to state E1 so that the total count of imported cases
+ * matches the number given in the file.  Both times and cases must be
+ * monotonically increasing.
+ *
+ *
  *
  * This file is part of COVIDm.
  *
@@ -26,7 +67,8 @@
  */
 
 // #undef SEEIIR_IMPLEMENTATION_1
-// #undef  SEEIIR_IMPLEMENTATION_2
+// #undef SEEIIR_IMPLEMENTATION_2
+// #undef SEEIIR_IMPLEMENTATION_3
 
 #include <iostream>
 #include <cstdio>
@@ -173,6 +215,9 @@ void read_imported_infections()
 #endif
 #ifdef SEEIIR_IMPLEMENTATION_2
 #include "seeiir_i2.cc"
+#endif
+#ifdef SEEIIR_IMPLEMENTATION_3
+#include "seeiir_i3.cc"
 #endif
 
 ///////////////////////////////////////////////////////////////////////////////
