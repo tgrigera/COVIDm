@@ -3,10 +3,6 @@
  *
  * An implementation (class SEIRPopulation and main())
  *
- * This is the driver for SEEIIR simulation (main and parameter
- * reading).  Link with a SEEIIR imlementation (seeiir_i1.cc or
- * seeiir_i2.cc) for a funcitoning simulation.
- *
  * Stochastic SEIR with two E and to I states.  Population separated
  * in families.  Simulated in continuous time (Gillespie algorithm).
  *
@@ -67,16 +63,6 @@ struct readI1 {
 struct readI2 {
   static int& element(Family* f) {return f->I2;}
 } ;
-
-// template <typename readerT> class Vvector {
-// public:
-//   Vvector(std::vector<Family*> &fvec) : fvec(fvec) {}
-//   size_t size() {return fvec.size();}
-//   int& member(size_t i) { return readerT::element(fvec[i]); }
-
-// private:
-//   std::vector<Family*> &fvec;
-// } ; 
 
 template <typename readerT> class Cumulative_count {
 public:
@@ -259,7 +245,6 @@ void SEIRPopulation::local_infection(int f) {
   families[f]->E1++;
   gstate.S--;
   gstate.E1++;
-  gstate.inf_close++;
 
   cumS.update_count();
   cumE1.update_count();
@@ -314,18 +299,8 @@ void SEIRPopulation::E2I1() {
 }
 
 void SEIRPopulation::I1I2() {
-  // if (gstate.I1!=cumI1.count.back()) {
-  //   std::cerr << "gstate I1 vs cumI1 " << gstate.I1 << ' ' << cumI1.count.back() << '\n';
-  //   exit(1);
-  // }
   int Ei=(*ran)(gstate.I1)+1;        // choose I1 with equal probability
   int f=bsearch(Ei,cumI1.count);     // find its family
-  // if (f>=families.size()) {
-  //   std::cerr << "Ahora revienta, f= " << f << " Ei = " << Ei << " I1 = " << gstate.I1 << '\n';
-  //   std::cerr << "        cumI1 back=  " << cumI1.count.back() << '\n';
-  //   cumI1.update_count();
-  //   std::cerr << " actualizado cumI1 back=  " << cumI1.count.back() << '\n';
-  // }
   families[f]->I1--;
   families[f]->I2++;
   gstate.I1--;
@@ -406,17 +381,6 @@ void run(SEIRPopulation &pop,SEEIIRstate *state)
     // compute transition probabilities
     pop.compute_rates();
     double mutot=pop.total_rate;
-
-
-    // std::cerr << "total_rate " << pop.total_rate
-    // 	      << "rate size " << pop.cumrate.size()
-    // 	      << "f inf " << pop.families_infected
-    // 	      << "\n";
-    // for (int kk=0; kk<pop.cumrate.size(); ++kk) {
-    //   std::cerr << "cumrate [" << kk << "] = " << pop.cumrate[kk];
-    //   if (kk==pop.families_infected) std::cerr << " *****";
-    //   std::cerr << '\n';
-    // }
 
     // advance time
     deltat=rexp(1./mutot);
