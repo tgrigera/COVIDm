@@ -5,8 +5,8 @@ models, with emphasis on those most useful to model COVID19.
 
 * Contents
 
-All models mentioned below are implemented in their stochastic
-variants.
+The source code produces the following executables (some details on
+the models are given below):
 
  - sir :: Simple fully-connected SIR model.  The simplest
    implementation, mostly useful as check for other programs.
@@ -17,6 +17,25 @@ variants.
 
  - sir_f :: A SIR with population divided in families, and different
    in- and out-of-family transmission rates.
+
+ - seeiir_i1, seeiir_i2, seeiir_i3 :: Three implementations of a
+   SE_2I_2R model, with population divided in families.
+
+All models mentioned are implemented in their stochastic variants.
+The programs read a few arguments from the command line, and the model
+parameters from a parameter file.  Running the programs without
+arguments outputs a brief reminder of the required arguments.  The
+required arguments are typically the name of the parameter file, the
+random number seed, the maximum time to run and the number of runs (if
+this number is greater than one, the output will be the average and
+variance over the different runs).  Unless an output file is required
+as argument, programs write to standard output.
+
+The parameter file gives the model rate parameters ($\beta$, $\gamma$,
+etc, defined below) and information about the population, such as the
+number of families, and number of family members.
+
+The format of the parameter file can be gathered from the examples.
 
 
 * Models
