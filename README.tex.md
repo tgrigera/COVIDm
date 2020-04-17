@@ -1,18 +1,18 @@
 
-* COVIDm
+# COVIDm
 
 This repository contains C++ code to simulate several epidemiological
 models, with emphasis on those most useful to model COVID19.
 
-** Contents
+## Contents
 
 The source code produces the following executables (some details on
 the models are given below):
 
-  - sir :: Simple fully-connected SIR model.  The simplest
+  - **sir** : Simple fully-connected SIR model.  The simplest
     implementation, mostly useful as check for other programs.
 
-  - sir_m :: The same fully-connected SIR as in =sir= but with the
+  - **sir_m** : The same fully-connected SIR as in =sir= but with the
     option to do multiple runs and compute mean and variance across
     realizations of the stochastic dynamcis.
 
@@ -38,22 +38,22 @@ number of families, and number of family members.
 
 The format of the parameter file can be gathered from the examples:
 
- - [[./sir_par.dat]] :: for =sir= and =sir_m=
- - [[./sir_f_par.dat]] :: for =sir_f=
- - [[./seeiir_par.dat]] :: for =seeiir_i1=, =seeiir_i2= and =seeiir_i3=
+ - [./sir_par.dat] :: for =sir= and =sir_m=
+ - [./sir_f_par.dat] :: for =sir_f=
+ - [./seeiir_par.dat] :: for =seeiir_i1=, =seeiir_i2= and =seeiir_i3=
 
 
 * Installation
 
 You can download one of the release tarballs or, for the latest
-version, from the latest commit (clicking ~clone or downlaod~ above).
+version, from the latest commit (clicking =clone or downlaod= above).
 
-To build form the latest commit install =autoconf= and =automake=.
-First generate the ~configure~ script: in the source directory do
+To build form the latest commit install ~autoconf~ and ~automake~.
+First generate the configure~ script: in the source directory do
 
 : autoreconf -if
 
-This stepped can be skipped if you downloaded a release tarball, which
+This step can be skipped if you downloaded a release tarball, which
 includes the =configure= script.
 
 Then proceed to configure and make:
@@ -70,18 +70,14 @@ error if they are missing:
  - GNU Scientific library
 
 
-* Models
+# Models
 
-** Fully-connected SIR
+## Fully-connected SIR
 
-The population is composed of \(N\) indistinguishable individuals,
+The population is composed of $N$ indistinguishable individuals,
 each interacting equally with all the others.  An individual can be in
 one of three states S (susceptible), I (infected) or R (recovered).
 The dynamics is defined by the transition rates
 
-\[  W^{(i)}_{S\to I} = \beta \frac{N_I}{N-1} \]
-\[  W^{(i)}_{I\to R} = \gamma \]
-
-
-
-
+$$  W^{(i)}_{S\to I} = \beta \frac{N_I}{N-1} $$
+$$  W^{(i)}_{I\to R} = \gamma $$
