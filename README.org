@@ -20,7 +20,7 @@ described [[./model_desc/README.md][here]]):
     in- and out-of-family transmission rates.
 
   - seeiir_i1, seeiir_i2, seeiir_i3 :: Three implementations of a
-    SE_2I_2R model, with population divided in families.
+    SEEIIR model, with population divided in families.
 
 All models mentioned are implemented in their stochastic variants.
 The programs read a few arguments from the command line, and the model
