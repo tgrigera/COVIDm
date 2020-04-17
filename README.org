@@ -1,18 +1,18 @@
 
-# COVIDm
+* COVIDm
 
 This repository contains C++ code to simulate several epidemiological
 models, with emphasis on those most useful to model COVID19.
 
-## Contents
+** Contents
 
-The source code produces the following executables (some details on
-the models are given below):
+The source code produces the following executables (the models are
+described [[./model_desc/README.md][here]]):
 
-  - **sir** : Simple fully-connected SIR model.  The simplest
+  - sir :: Simple fully-connected SIR model.  The simplest
     implementation, mostly useful as check for other programs.
 
-  - **sir_m** : The same fully-connected SIR as in =sir= but with the
+  - sir_m :: The same fully-connected SIR as in =sir= but with the
     option to do multiple runs and compute mean and variance across
     realizations of the stochastic dynamcis.
 
@@ -36,11 +36,14 @@ The parameter file gives the model rate parameters ($\beta$, $\gamma$,
 etc, defined below) and information about the population, such as the
 number of families, and number of family members.
 
-The format of the parameter file can be gathered from the examples:
+The format of the parameter file can be gathered from the examples (in
+the [[./model_desc][model_desc]] directory:
 
- - [./sir_par.dat] :: for =sir= and =sir_m=
- - [./sir_f_par.dat] :: for =sir_f=
- - [./seeiir_par.dat] :: for =seeiir_i1=, =seeiir_i2= and =seeiir_i3=
+ - [[./model_desc/sir_par.dat][sir_par.dat]] :: for =sir= and =sir_m=
+ - [[./model_desc/sir_par.dat][sir_f_par.dat]] :: for =sir_f=
+ - [[./model_desc/seeiir_par.dat][seeiir_par.dat]] :: for =seeiir_i1=, =seeiir_i2= and =seeiir_i3=
+
+For the meaning of the parameters, see the [[./model_desc/README.md][model description]].
 
 
 * Installation
@@ -70,14 +73,3 @@ error if they are missing:
  - GNU Scientific library
 
 
-# Models
-
-## Fully-connected SIR
-
-The population is composed of $N$ indistinguishable individuals,
-each interacting equally with all the others.  An individual can be in
-one of three states S (susceptible), I (infected) or R (recovered).
-The dynamics is defined by the transition rates
-
-$$  W^{(i)}_{S\to I} = \beta \frac{N_I}{N-1} $$
-$$  W^{(i)}_{I\to R} = \gamma $$
