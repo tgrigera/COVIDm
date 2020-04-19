@@ -53,7 +53,7 @@ duplicated state serves to give a non-exponential distribution of the
 duration of the infection.  The population is divided in families as
 in the previous model.  Transition rates are
 
-<p align="center"><img src="/model_desc/tex/12bf5a4e0b4392f5ee404e0264867df5.svg?invert_in_darkmode&sanitize=true" align=middle width=388.31547645pt height=163.87545075pt/></p>
+<p align="center"><img src="/model_desc/tex/98ea3e5d9c987f3c40e97b5653aae4c6.svg?invert_in_darkmode&sanitize=true" align=middle width=343.537062pt height=155.87549669999999pt/></p>
 
 with <img src="/model_desc/tex/f9c4988898e7f532b9f826a75014ed3c.svg?invert_in_darkmode&sanitize=true" align=middle width=14.99998994999999pt height=22.465723500000017pt/> the total population, <img src="/model_desc/tex/4855e1a0b6043df68024a06e6eb9d355.svg?invert_in_darkmode&sanitize=true" align=middle width=24.882493349999987pt height=22.465723500000017pt/> the number of individuals in
 state <img src="/model_desc/tex/cbfb1b2a33b28eab8a3e59464768e810.svg?invert_in_darkmode&sanitize=true" align=middle width=14.908688849999992pt height=22.465723500000017pt/>, and <img src="/model_desc/tex/f1e6937ee9361d7fcc96be9f2eb2ed5d.svg?invert_in_darkmode&sanitize=true" align=middle width=35.778728699999995pt height=22.465723500000017pt/> the number of members of family <img src="/model_desc/tex/190083ef7a1625fbc75f243cffb9c96d.svg?invert_in_darkmode&sanitize=true" align=middle width=9.81741584999999pt height=22.831056599999986pt/> in state
