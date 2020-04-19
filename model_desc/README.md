@@ -53,7 +53,7 @@ duplicated state serves to give a non-exponential distribution of the
 duration of the infection.  The population is divided in families as
 in the previous model.  Transition rates are
 
-<p align="center"><img src="/model_desc/tex/98ea3e5d9c987f3c40e97b5653aae4c6.svg?invert_in_darkmode&sanitize=true" align=middle width=343.537062pt height=155.87549669999999pt/></p>
+<p align="center"><img src="/model_desc/tex/3f55e2889ffa9c70c1236a80b5cb8c2f.svg?invert_in_darkmode&sanitize=true" align=middle width=343.537062pt height=155.87549669999999pt/></p>
 
 with <img src="/model_desc/tex/f9c4988898e7f532b9f826a75014ed3c.svg?invert_in_darkmode&sanitize=true" align=middle width=14.99998994999999pt height=22.465723500000017pt/> the total population, <img src="/model_desc/tex/4855e1a0b6043df68024a06e6eb9d355.svg?invert_in_darkmode&sanitize=true" align=middle width=24.882493349999987pt height=22.465723500000017pt/> the number of individuals in
 state <img src="/model_desc/tex/cbfb1b2a33b28eab8a3e59464768e810.svg?invert_in_darkmode&sanitize=true" align=middle width=14.908688849999992pt height=22.465723500000017pt/>, and <img src="/model_desc/tex/f1e6937ee9361d7fcc96be9f2eb2ed5d.svg?invert_in_darkmode&sanitize=true" align=middle width=35.778728699999995pt height=22.465723500000017pt/> the number of members of family <img src="/model_desc/tex/190083ef7a1625fbc75f243cffb9c96d.svg?invert_in_darkmode&sanitize=true" align=middle width=9.81741584999999pt height=22.831056599999986pt/> in state
@@ -71,3 +71,12 @@ as the cumulative total cases, not new cases.  At the specifed time a
 number of S individuals are forced to state E<img src="/model_desc/tex/d0d302843978b7a7264dbb9cb2196dfd.svg?invert_in_darkmode&sanitize=true" align=middle width=6.5525476499999895pt height=14.15524440000002pt/> so that the total
 count of imported cases matches the number given in the file.  Both
 times and cases must be monotonically increasing.
+
+One can also give a time-dependent <img src="/model_desc/tex/a549abb698d8c2c1db04d5502c7e297f.svg?invert_in_darkmode&sanitize=true" align=middle width=28.24783829999999pt height=22.831056599999986pt/> as a way to
+model variaitons over time of social confinement measures.  To do
+this, set a negative value <img src="/model_desc/tex/a549abb698d8c2c1db04d5502c7e297f.svg?invert_in_darkmode&sanitize=true" align=middle width=28.24783829999999pt height=22.831056599999986pt/> in the parameter file
+and give the name of a file with the
+[time-dependent parameter](./beta_vs_time.dat): this is a two-column
+file giving a time at which <img src="/model_desc/tex/a549abb698d8c2c1db04d5502c7e297f.svg?invert_in_darkmode&sanitize=true" align=middle width=28.24783829999999pt height=22.831056599999986pt/> is changed, and its new value.
+Be sure to give a reasonable value at <img src="/model_desc/tex/1c899e1c767eb4eac89facb5d1f2cb0d.svg?invert_in_darkmode&sanitize=true" align=middle width=36.07293689999999pt height=21.18721440000001pt/>, otherwise the simulation will start
+with a negative <img src="/model_desc/tex/8217ed3c32a785f0b5aad4055f432ad8.svg?invert_in_darkmode&sanitize=true" align=middle width=10.16555099999999pt height=22.831056599999986pt/>.
