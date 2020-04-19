@@ -1,9 +1,9 @@
 #
-# Makefila.am -- automake script for COVIDm
+# Makefile.am -- automake script for COVIDm
 #
 # COVIDm is copyright (c) 2020 by the authors (see AUTHORS)
 #
-# Process this file with autoconf to produce a configure script.
+
 
 bin_PROGRAMS = sir sir_m sir_f seeiir_i1 seeiir_i2 seeiir_i3
 

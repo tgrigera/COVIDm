@@ -60,12 +60,12 @@ duration of the infection.  The population is divided in families as
 in the previous model.  Transition rates are
 
 \begin{align*}
-   W^{(i)}_(S\to E_1) & = \beta_\text{out} \frac{N_{I_1}+N_{I_2} } {N-1}  +
-                          \beta_\text{in}  ( N_{I_1,f} + N_{I_2,f}, \\
-   W^{(i)}_(E_1\to E_22) &= 2 + \sigma, \\
-   W^{(i)}_(E_2 \to I_1) &= 2 + \sigma, \\
-   W^{(i)}_(I_1 \to I_2) &= 2 + \gamma, \\
-   W^{(i)}_(I_2 \to R) &= 2 + \gamma, \\
+   W^{(i)}_{S\to E_1} & = \beta_\text{out} \frac{N_{I_1}+N_{I_2} } {N-1}  +
+                          \beta_\text{in}  ( N_{I_1,f} + N_{I_2,f}), \\
+   W^{(i)}_{E_1\to E_2} &= 2 + \sigma, \\
+   W^{(i)}_{E_2 \to I_1} &= 2 + \sigma, \\
+   W^{(i)}_{I_1 \to I_2} &= 2 + \gamma, \\
+   W^{(i)}_{I_2 \to R} &= 2 + \gamma, \\
 \end{align*}
 
 with $N$ the total population, $N_X$ the number of individuals in

@@ -102,11 +102,16 @@ struct opt {
   int         Mmax;         // Maximum family size
   double      *PM;          // Family size distribution
   std::string eifile;       // File to read imported infected cases
+  std::string betafile;     // File to read beta_out vs time
 
   // imported infections
   struct ei {double time; int I;} ;
   typedef std::queue<ei>                imported_infections_t;
   imported_infections_t                 imported_infections;
+  // beta vs time
+  struct eb {double time; double beta;} ;
+  typedef std::queue<eb>                beta_vs_time_t;
+  beta_vs_time_t                        beta_vs_time;
 
   // Epidemic parameters
   double beta_in,beta_out,sigma,gamma;
@@ -143,6 +148,7 @@ char *readbuf(FILE *f)
 }
 
 void read_imported_infections();
+void read_beta_vs_time();
 
 void read_parameters(int argc,char *argv[])
 {
@@ -167,9 +173,14 @@ void read_parameters(int argc,char *argv[])
   buf=readbuf(f);
   options.eifile=buf;
   options.eifile.erase(options.eifile.end()-1);   // remove trailing newline
-  fclose(f);
-
   read_imported_infections();
+  if (options.beta_out<0) {                      // beta_out comes from beta vs time file
+    buf=readbuf(f);
+    options.betafile=buf;
+    options.betafile.erase(options.betafile.end()-1);   // remove trailing newline
+    read_beta_vs_time();
+  }
+  fclose(f);
 
   printf("##### Parameters\n");
   printf("# beta_in = %g\n",options.beta_in);
@@ -190,7 +201,18 @@ void read_parameters(int argc,char *argv[])
     printf("# %g %d\n",r.time,r.I);
     ii.pop();
   }
-  printf("# Nruns = %d\n",options.Nruns);
+  if (options.beta_out<0) {
+  printf("#\n# Beta_out:\n");
+  printf("# Time   Beta_out\n");
+    opt::beta_vs_time_t ib=options.beta_vs_time;
+    opt::eb r;
+    while (!ib.empty()) {
+      r=ib.front();
+      printf("# %g %g\n",r.time,r.beta);
+      ib.pop();
+    }
+  }
+  printf("#\n# Nruns = %d\n",options.Nruns);
 }
 
 void read_imported_infections()
@@ -208,6 +230,64 @@ void read_imported_infections()
   }
   
   fclose(f);
+}
+
+void read_beta_vs_time()
+{
+  FILE *f=fopen(options.betafile.c_str(),"r");
+  if (f==0) throw std::runtime_error(strerror(errno));
+
+  opt::eb bi;
+  while (ungetc(fgetc(f),f)!=EOF) {
+    char *buf=readbuf(f);
+    if (sscanf(buf,"%lg %lg",&bi.time,&bi.beta)!=2) {
+      std::cerr  << "couldn't read record: " << buf << "\n";
+      throw std::runtime_error(strerror(errno));}
+    options.beta_vs_time.push(bi);
+  }
+  fclose(f);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+//
+// merge_events()
+
+struct event {
+  double time;
+  enum   {infection,beta_change} kind;
+  int    I;
+  double beta;
+} ;
+
+typedef std::queue<event> event_queue_t;
+event_queue_t             event_queue;
+
+//
+// build a time ordered queue of beta and imported infection changes
+// closes with dummy event at infinite time
+void merge_events()
+{
+  while (!event_queue.empty()) event_queue.pop();
+  
+  opt::imported_infections_t ii=options.imported_infections;
+  opt::beta_vs_time_t        bt=options.beta_vs_time;
+
+  while (!ii.empty() || !bt.empty() ) {
+
+    while (!ii.empty() && (bt.empty() || ii.front().time<=bt.front().time) ) {
+      event_queue.push({ii.front().time,event::infection,ii.front().I,-1});
+      ii.pop();
+    }
+
+    while (!bt.empty() && (ii.empty() || bt.front().time<=ii.front().time) ) {
+      event_queue.push({bt.front().time,event::beta_change,-1000,bt.front().beta});
+      bt.pop();
+    }
+
+  }
+
+  // dummy event
+  event_queue.push({std::numeric_limits<double>::max(),event::infection,0,0});
 }
 
 #ifdef SEEIIR_IMPLEMENTATION_1
@@ -238,6 +318,8 @@ int main(int argc,char *argv[])
 
   SEIRPopulation pop(options.Nfamilies,options.beta_in,options.beta_out,
 		     options.sigma,options.gamma,options.Mmax,options.PM);
+
+  merge_events();
 
   // Do runs and print results
   for (int n=0; n<options.Nruns; ++n) {

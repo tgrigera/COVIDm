@@ -70,6 +70,7 @@ public:
   void event(int f,double r);  // perform an event in family f, update family's rates
   void add_imported(int I);    // add infected (E1) at random so that the number
                                // of imported cases becomes I
+  void set_beta_out(double b); // call to change beta_out during simulation (invalidates rates)
   
   void local_infection(int fn);
   void global_infection();
@@ -78,19 +79,21 @@ public:
   void I1I2();
   void I2R();
 
+  SEEIIRistate        gstate;
+  std::vector<double> cumrate;
+  double              total_rate;
+
+  std::vector<int>    families_infected;
+
+private:
   double beta_in,beta_out,sigma,gamma;
   int    NFamilies,Mmax;
   Uniform_integer       *ran;;
   Discrete_distribution *Mdist;
 
-  SEEIIRistate             gstate;
   std::vector<Family*>     families;
-  std::vector<int>         listS,listE1,listE2,listI1,listI2,families_infected;
+  std::vector<int>         listS,listE1,listE2,listI1,listI2;
 
-  std::vector<double> cumrate;
-  double              total_rate;
-
-private:
   void erase_susceptible(int family_number);
 } ;
 		 
@@ -121,6 +124,7 @@ void SEIRPopulation::rebuild_families()
 {
   gstate.N=gstate.S=gstate.E1=gstate.E2=gstate.I1=gstate.I2=gstate.R=0;
   gstate.inf_close=gstate.inf_community=gstate.inf_imported=0;
+  gstate.beta_out=beta_out;
 
   Family *fam;
   families.clear();
@@ -164,6 +168,13 @@ void SEIRPopulation::set_all_S()
     for (int iS=0; iS<f->S; iS++)
       listS.push_back(fn);
   }
+}
+
+// call to change beta_out during simulation (invalidates rates)
+inline void SEIRPopulation::set_beta_out(double beta)
+{
+  beta_out=beta;
+  gstate.beta_out=beta;
 }
 
 /*
@@ -348,10 +359,7 @@ void run(SEIRPopulation &pop,SEEIIRstate *state)
   double deltat,time=0;
   double last=-10;
 
-  opt::ei imported_end={std::numeric_limits<double>::max(),0};
-  opt::imported_infections_t imported=options.imported_infections;
-  imported.push(imported_end);
-  double t_next_imported=imported.front().time;
+  event_queue_t events=event_queue;
 
   while (time<options.steps) {
 
@@ -363,13 +371,20 @@ void run(SEIRPopulation &pop,SEEIIRstate *state)
     deltat=rexp(1./mutot);
     time+=deltat;
 
-    if (time>=t_next_imported) {              // it's time to add new imported infections
+    if (time>=events.front().time) {              // imported infections or beta change
 
-      if (imported.size()==1) break;
-      time=t_next_imported;
-      pop.add_imported(imported.front().I);
-      imported.pop();
-      t_next_imported = imported.front().time;
+      if (events.size()==1) break;
+      time=events.front().time;
+
+      switch (events.front().kind) {
+      case event::infection:
+	pop.add_imported(events.front().I);
+	break;
+      case event::beta_change:
+	pop.set_beta_out(events.front().beta);
+	break;
+      }
+      events.pop();
 
     } else {
 

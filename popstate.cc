@@ -185,11 +185,11 @@ void SIRstate_av::print(std::ostream& o,bool print_time)
 const char *SEEIIRstate::header()
 {
   hdr.clear();
-  create_colnums(13);
+  create_colnums(14);
   hdr=colnums;
   hdr+="#      time ";
   addSIRhdr();
-  hdr+="   Imported  CloseCntct   Community           N";
+  hdr+="   Imported  CloseCntct   Community           N    beta_out";
   return hdr.c_str();
 }  
 
@@ -203,8 +203,9 @@ void SEEIIRstate::push(double time_,SEEIIRistate &s)
   I[1]=s.I2;
   R[0]=s.R;
   Population_state::print(std::cout,true);
-  char buf[50];
-  sprintf(buf,"%11d %11d %11d %11d",s.inf_imported,s.inf_close,s.inf_community,s.N);
+  char buf[200];
+  sprintf(buf,"%11d %11d %11d %11d %11.6g",s.inf_imported,s.inf_close,s.inf_community,
+	  s.N,s.beta_out);
   std::cout << buf << '\n';
 }
 
@@ -215,19 +216,20 @@ void SEEIIRstate::push(double time_,SEEIIRistate &s)
 const char *SEEIIRstate_av::header()
 {
   hdr.clear();
-  create_colnums(24);
+  create_colnums(27);
   hdr=colnums;
-  hdr+="#           |----------------------------------------------------------- Average -------------------------------------------------------------| |------------------------------------------------------------ Variance -----------------------------------------------------------|\n";
+  hdr+="#           |------------------------------------------------------------------------ Average ------------------------------------------------------------------------| |----------------------------------------------------------------------- Variance ------------------------------------------------------------------------|\n";
   hdr+="#      time ";
   addSIRhdr();
-  hdr+="   Imported  CloseCntct   Community ";
+  hdr+="   Imported  CloseCntct   Community           N    beta_out";
   addSIRhdr();
-  hdr+="   Imported  CloseCntct   Community           N";
+  hdr+="    Imported  CloseCntct   Community           N    beta_out";
   return hdr.c_str();
 }  
 
 void SEEIIRstate_av::push(double time,SEEIIRistate &s)
 {
+  Nav.push(time,s.N);
   Sav.push(time,s.S);
   E1av.push(time,s.E1);
   E2av.push(time,s.E2);
@@ -237,13 +239,14 @@ void SEEIIRstate_av::push(double time,SEEIIRistate &s)
   Impav.push(time,s.inf_imported);
   Closeav.push(time,s.inf_close);
   Commav.push(time,s.inf_community);
-  N_=s.N;
+  betaav.push(time,s.beta_out);
 }
 
 void SEEIIRstate_av::print(std::ostream& o,bool print_time)
 {
   std::vector<double> tim,Sa,Sv,E1a,E1v,E2a,E2v,I1a,I1v,I2a,I2v,Ra,Rv,
-    impa,impv,closea,closev,comma,commv;
+    impa,impv,closea,closev,comma,commv,betaa,betav,Na,Nv;
+  Nav.get_aves(tim,Na,Nv);
   Sav.get_aves(tim,Sa,Sv);
   E1av.get_aves(tim,E1a,E1v);
   E2av.get_aves(tim,E2a,E2v);
@@ -253,8 +256,9 @@ void SEEIIRstate_av::print(std::ostream& o,bool print_time)
   Impav.get_aves(tim,impa,impv);
   Closeav.get_aves(tim,closea,closev);
   Commav.get_aves(tim,comma,commv);
+  betaav.get_aves(tim,betaa,betav);
 
-  char buf[60];
+  char buf[200];
   for (int i=0; i<Sv.size(); ++i) {
     time=tim[i];
     S[0]=Sa[i];
@@ -264,7 +268,7 @@ void SEEIIRstate_av::print(std::ostream& o,bool print_time)
     I[1]=I2a[i];
     R[0]=Ra[i];
     Population_state::print(o,print_time);
-    sprintf(buf,"%11.6g %11.6g %11.6g ",impa[i],closea[i],comma[i]);
+    sprintf(buf,"%11.6g %11.6g %11.6g %11.6g %11.6g",impa[i],closea[i],comma[i],Na[i],betaa[i]);
     std::cout << buf;
 
     S[0]=Sv[i];
@@ -274,7 +278,7 @@ void SEEIIRstate_av::print(std::ostream& o,bool print_time)
     I[1]=I2v[i];
     R[0]=Rv[i];
     Population_state::print(o,false);
-    sprintf(buf,"%11.6g %11.6g %11.6g %11d",impv[i],closev[i],commv[i],N_);
+    sprintf(buf," %11.6g %11.6g %11.6g %11.6g %11.6g",impv[i],closev[i],commv[i],Nv[i],betav[i]);
     std::cout << buf << '\n';
   }
 }

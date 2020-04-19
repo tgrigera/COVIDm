@@ -107,13 +107,14 @@ struct SEEIIRistate {
   int    S,E1,E2,I1,I2,R;    // Total in states SEIR
   // cumulative infections by type
   int    inf_imported,inf_close,inf_community;
+  double beta_out;
 } ;
 
 
 class SEEIIRstate : public Population_state {
 public:
   SEEIIRstate() :
-    Population_state(1,2,2,1) {}
+    Population_state(1,2,2,1) {time=-10;}
   const char* header();
   virtual void push(double time,SEEIIRistate &s);
 } ;
@@ -135,7 +136,9 @@ public:
     Rav(-0.5*deltat,1.,deltat),
     Impav(-0.5*deltat,1.,deltat),
     Closeav(-0.5*deltat,1.,deltat),
-    Commav(-0.5*deltat,1.,deltat)
+    Commav(-0.5*deltat,1.,deltat),
+    Nav(-0.5*deltat,1.,deltat),
+    betaav(-0.5*deltat,1.,deltat)
   {}
 
   const char* header();
@@ -143,8 +146,7 @@ public:
   void push(double time,SEEIIRistate &s);
 
 private:
-  Geoave Sav,E1av,E2av,I1av,I2av,Rav,Impav,Closeav,Commav;
-  int N_;
+  Geoave Sav,E1av,E2av,I1av,I2av,Rav,Impav,Closeav,Commav,Nav,betaav;
 } ;
 
 

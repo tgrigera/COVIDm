@@ -6,7 +6,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.69])
-AC_INIT(COVIDm, 0.1, tgrigera@iflysib.unlp.edu.ar)
+AC_INIT(COVIDm, 0.2, tgrigera@iflysib.unlp.edu.ar)
 AC_CONFIG_SRCDIR([qdrandom.cc])
 AC_CONFIG_HEADERS([config.h])
 AC_LANG(C++)
