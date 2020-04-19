@@ -32,9 +32,9 @@ this number is greater than one, the output will be the average and
 variance over the different runs).  Unless an output file is required
 as argument, programs write to standard output.
 
-The parameter file gives the model rate parameters ($\beta$, $\gamma$,
-etc, defined below) and information about the population, such as the
-number of families, and number of family members.
+The parameter file gives the model parameters and information about
+the population, such as the number of families, and number of family
+members.
 
 The format of the parameter file can be gathered from the examples (in
 the [[./model_desc][model_desc]] directory:

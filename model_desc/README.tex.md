@@ -62,10 +62,10 @@ in the previous model.  Transition rates are
 \begin{align*}
    W^{(i)}_{S\to E_1} & = \beta_\text{out} \frac{N_{I_1}+N_{I_2} } {N-1}  +
                           \beta_\text{in}  ( N_{I_1,f} + N_{I_2,f}), \\
-   W^{(i)}_{E_1\to E_2} &= 2 + \sigma, \\
-   W^{(i)}_{E_2 \to I_1} &= 2 + \sigma, \\
-   W^{(i)}_{I_1 \to I_2} &= 2 + \gamma, \\
-   W^{(i)}_{I_2 \to R} &= 2 + \gamma, \\
+   W^{(i)}_{E_1\to E_2} &= 2  \sigma, \\
+   W^{(i)}_{E_2 \to I_1} &= 2  \sigma, \\
+   W^{(i)}_{I_1 \to I_2} &= 2  \gamma, \\
+   W^{(i)}_{I_2 \to R} &= 2  \gamma, \\
 \end{align*}
 
 with $N$ the total population, $N_X$ the number of individuals in
@@ -84,3 +84,12 @@ as the cumulative total cases, not new cases.  At the specifed time a
 number of S individuals are forced to state E$_1$ so that the total
 count of imported cases matches the number given in the file.  Both
 times and cases must be monotonically increasing.
+
+One can also give a time-dependent $\beta_\text{out}$ as a way to
+model variaitons over time of social confinement measures.  To do
+this, set a negative value $\beta_\text{out}$ in the parameter file
+and give the name of a file with the
+[time-dependent parameter](./beta_vs_time.dat): this is a two-column
+file giving a time at which $\beta_\text{out}$ is changed, and its new value.
+Be sure to give a reasonable value at $t=0$, otherwise the simulation will start
+with a negative $\beta$.

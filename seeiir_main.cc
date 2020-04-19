@@ -18,10 +18,10 @@
  * out-of family contacts.  The transition rates (per individual) are
  *
  *  W(S->E1) = beta_out * (I1+I2) / (N-1)  + beta_in * (I1[f] + I2[f])
- *  W(E1->E2) = 2 + sigma
- *  W(E2->I1) = 2 + sigma
- *  W(I1->I2) = 2 + gamma
- *  W(I2->R) = 2 + gamma
+ *  W(E1->E2) = 2 * sigma
+ *  W(E2->I1) = 2 * sigma
+ *  W(I1->I2) = 2 * gamma
+ *  W(I2->R) = 2 * gamma
  *
  * where N is the number of individuals, I1 and I2 the total number of
  * individuals in those states, and I1[f] the number of individuals in
