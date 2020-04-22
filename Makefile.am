@@ -23,3 +23,5 @@ seeiir_i3_SOURCES = seeiir_main.cc bsearch.cc popstate.cc geoave.cc qdrandom.cc
 seeiir_i3_CPPFLAGS = -DSEEIIR_IMPLEMENTATION_3
 
 noinst_HEADERS = bsearch.hh qdrandom.hh read_arg.hh popstate.hh geoave.hh
+
+EXTRA_DIST = seeiir_i1.cc seeiir_i2.cc seeiir_i3.cc

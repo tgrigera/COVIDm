@@ -209,6 +209,8 @@ void SEIRPopulation::add_imported(int I)
   I-=gstate.inf_imported;  // This is the number of new cases
   if (I>gstate.S)
     {std::cerr << "Cannot add imported, too few suscetibles\n"; exit(1);}
+  if (I<0)
+    {std::cerr << "Error in imported infections file: external infections must be monotnically increasing\n"; exit(1);}
 
   // to choose in which family to infect, build cumulative
   // count of susceptibles and draw random number
