@@ -172,7 +172,6 @@ void SEIRPopulation::event(int f,double r)   // Do infection or recovery on fami
   double rE2I1=rE1E2 + families[f].E2 * 2*sigma;
   double rI1I2=rE2I1 + families[f].I1 * 2*gamma;
   double rI2R=rI1I2 + families[f].I2 * 2*gamma;
-  double localrate=rI2R + families[f].S * beta_in * (families[f].I1 + families[f].I2);
 
   if (r<rE1E2) {
     families[f].E1--;
@@ -180,6 +179,8 @@ void SEIRPopulation::event(int f,double r)   // Do infection or recovery on fami
     families[f].E2++;
     gstate.E2++;
   } else if (r<rE2I1) {
+    if (families[f].I1+families[f].I2+families[f].R>0) gstate.inf_close++;
+    else gstate.inf_community++;
     families[f].E2--;
     gstate.E2--;
     families[f].I1++;
@@ -199,8 +200,6 @@ void SEIRPopulation::event(int f,double r)   // Do infection or recovery on fami
     gstate.S--;
     families[f].E1++;
     gstate.E1++;
-    if (r<localrate) gstate.inf_close++;
-    else gstate.inf_community++;
   }    
 }
 
@@ -233,10 +232,10 @@ void SEIRPopulation::add_imported(int I)
   for (auto Sn: inf) {
     int f=bsearch(Sn,suscount);
     families[f].S--;
-    families[f].E1++;
+    families[f].I1++;
   }
   gstate.S-=I;
-  gstate.E1+=I;
+  gstate.I1+=I;
   gstate.inf_imported+=I;
 }
 

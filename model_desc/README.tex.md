@@ -81,9 +81,17 @@ be introduced in order to start the epidemic.  The external infections
 are read from a two-column [file](./imported_infections.dat) giving
 time and number of imported cases.  The second column is interpreted
 as the cumulative total cases, not new cases.  At the specifed time a
-number of S individuals are forced to state E$_1$ so that the total
+number of S individuals are forced to state I$_1$ so that the total
 count of imported cases matches the number given in the file.  Both
 times and cases must be monotonically increasing.
+
+The program outputs the total number of individuals in each
+epidemiological state plus a cumulative count of infections according
+to type: imported (this matches the number from the imported
+infections file), close contact and communtiy.  Infections are counted
+as close-contact if when the invidual transitions from $E_2$ to $I_1$,
+the family has other members in states $I_1$, $I_2$ or $R$.  Otherwise
+they are classified as community.
 
 One can also give a time-dependent $\beta_\text{out}$ as a way to
 model variaitons over time of social confinement measures.  To do

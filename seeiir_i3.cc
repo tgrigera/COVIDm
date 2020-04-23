@@ -255,7 +255,6 @@ void SEIRPopulation::global_infection() {
   int fn=listS[Si];                // find its family
   families[fn]->E1++;
   gstate.E1++;
-  gstate.inf_community++;
 
   listE1.push_back(fn);
   erase_susceptible(fn);
@@ -277,6 +276,9 @@ void SEIRPopulation::E2I1() {
   int Ei=(*ran)(gstate.E2);          // choose E2 with equal probability
   auto Ep=listE2.begin()+Ei;         // find its family
   int  fn=*Ep;
+  if (families[fn]->I1+families[fn]->I2+families[fn]->R>0) gstate.inf_close++;
+  else gstate.inf_community++;
+
   families[fn]->E2--;                // update family and gstate
   families[fn]->I1++;
   gstate.E2--;
@@ -342,11 +344,18 @@ void SEIRPopulation::add_imported(int I)
   // find them in the families and infect
   for (auto Si: inf) {
     int fn=listS[Si];        // find its family
-    families[fn]->E1++;
-    erase_susceptible(fn);                 // update lists
-    listE1.push_back(fn);
+    families[fn]->I1++;
+    listI1.push_back(fn);
+    if (families[fn]->I1 + families[fn]->I2 == 1) {          // first infection in family, record list
+      families[fn]->infected_families_in_list=families_infected.size();
+      families_infected.push_back(fn);
+    }
   }
-  gstate.E1+=I;
+  for (auto Si: inf) {     // update suscetibles
+    int fn=listS[Si];      
+    erase_susceptible(fn); 
+  }
+  gstate.I1+=I;
   gstate.inf_imported+=I;
 }
 

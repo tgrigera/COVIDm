@@ -259,7 +259,6 @@ void SEIRPopulation::local_infection(int f) {
 
   cumS.update_count();
   cumE1.update_count();
-  gstate.inf_close++;
 }
 
 void SEIRPopulation::global_infection() {
@@ -272,7 +271,6 @@ void SEIRPopulation::global_infection() {
 
   cumS.update_count();
   cumE1.update_count();
-  gstate.inf_community++;
 }
 
 void SEIRPopulation::E1E2() {
@@ -290,6 +288,9 @@ void SEIRPopulation::E1E2() {
 void SEIRPopulation::E2I1() {
   int Ei=(*ran)(gstate.E2)+1;      // choose E2 with equal probability
   int f=bsearch(Ei,cumE2.count);   // find its family
+
+  if (families[f]->I1+families[f]->I2+families[f]->R>0) gstate.inf_close++;
+  else gstate.inf_community++;
   families[f]->E2--;
   families[f]->I1++;
   gstate.E2--;
@@ -362,15 +363,15 @@ void SEIRPopulation::add_imported(int I)
   for (auto Si: inf) {
     int f=bsearch(Si,cumS.count);    // find its family
     families[f]->S--;
-    families[f]->E1++;
+    families[f]->I1++;
   }
 
   gstate.S-=I;
-  gstate.E1+=I;
+  gstate.I1+=I;
   gstate.inf_imported+=I;
 
   cumS.update_count();
-  cumE1.update_count();
+  cumI1.update_count();
 }
 
 ///////////////////////////////////////////////////////////////////////////////
