@@ -65,7 +65,7 @@ infections.
 
 The population is initialized to all S, so infected individuals must
 be introduced in order to start the epidemic.  The external infections
-are read from a two-column [file](/.imported_infections.dat) giving
+are read from a two-column [file](./imported_infections.dat) giving
 time and number of imported cases.  The second column is interpreted
 as the cumulative total cases, not new cases.  At the specifed time a
 number of S individuals are forced to state E<img src="/model_desc/tex/d0d302843978b7a7264dbb9cb2196dfd.svg?invert_in_darkmode&sanitize=true" align=middle width=6.5525476499999895pt height=14.15524440000002pt/> so that the total
