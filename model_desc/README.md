@@ -68,9 +68,17 @@ be introduced in order to start the epidemic.  The external infections
 are read from a two-column [file](./imported_infections.dat) giving
 time and number of imported cases.  The second column is interpreted
 as the cumulative total cases, not new cases.  At the specifed time a
-number of S individuals are forced to state E<img src="/model_desc/tex/d0d302843978b7a7264dbb9cb2196dfd.svg?invert_in_darkmode&sanitize=true" align=middle width=6.5525476499999895pt height=14.15524440000002pt/> so that the total
+number of S individuals are forced to state I<img src="/model_desc/tex/d0d302843978b7a7264dbb9cb2196dfd.svg?invert_in_darkmode&sanitize=true" align=middle width=6.5525476499999895pt height=14.15524440000002pt/> so that the total
 count of imported cases matches the number given in the file.  Both
 times and cases must be monotonically increasing.
+
+The program outputs the total number of individuals in each
+epidemiological state plus a cumulative count of infections according
+to type: imported (this matches the number from the imported
+infections file), close contact and communtiy.  Infections are counted
+as close-contact if when the invidual transitions from <img src="/model_desc/tex/be655e6ff5e921809983a59b05ec05b4.svg?invert_in_darkmode&sanitize=true" align=middle width=18.687266399999988pt height=22.465723500000017pt/> to <img src="/model_desc/tex/d906cd9791e4b48a3b848558acda5899.svg?invert_in_darkmode&sanitize=true" align=middle width=13.77859724999999pt height=22.465723500000017pt/>,
+the family has other members in states <img src="/model_desc/tex/d906cd9791e4b48a3b848558acda5899.svg?invert_in_darkmode&sanitize=true" align=middle width=13.77859724999999pt height=22.465723500000017pt/>, <img src="/model_desc/tex/9eff113852463b85a970d2d65d52280c.svg?invert_in_darkmode&sanitize=true" align=middle width=13.77859724999999pt height=22.465723500000017pt/> or <img src="/model_desc/tex/1e438235ef9ec72fc51ac5025516017c.svg?invert_in_darkmode&sanitize=true" align=middle width=12.60847334999999pt height=22.465723500000017pt/>.  Otherwise
+they are classified as community.
 
 One can also give a time-dependent <img src="/model_desc/tex/a549abb698d8c2c1db04d5502c7e297f.svg?invert_in_darkmode&sanitize=true" align=middle width=28.24783829999999pt height=22.831056599999986pt/> as a way to
 model variaitons over time of social confinement measures.  To do
