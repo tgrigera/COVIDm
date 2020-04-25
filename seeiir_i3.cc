@@ -332,31 +332,22 @@ void SEIRPopulation::add_imported(int I)
   if (I<0)
     {std::cerr << "Error in imported infections file: external infections must be monotnically increasing\n"; exit(1);}
 
-  // Randomly choose I distinct individuals
-  std::vector<int> inf;
-  for (int i=0; i<I; ++i) {
-    int Sn;
-    do Sn=(*ran)(gstate.S);
-    while ( std::find(inf.begin(),inf.end(),Sn)!=inf.end() ) ;
-    inf.push_back(Sn);
-  }
-
-  // find them in the families and infect
-  for (auto Si: inf) {
-    int fn=listS[Si];        // find its family
+  // Randomly choose and infect I individuals
+  for (int infn=0; infn<I; ++infn) {
+    int Sn=(*ran)(gstate.S);
+    // find in family and infect in state I1
+    int fn=listS[Sn];        // find its family
     families[fn]->I1++;
+    gstate.I1++;
     listI1.push_back(fn);
+    erase_susceptible(fn);
     if (families[fn]->I1 + families[fn]->I2 == 1) {          // first infection in family, record list
       families[fn]->infected_families_in_list=families_infected.size();
       families_infected.push_back(fn);
     }
   }
-  for (auto Si: inf) {     // update suscetibles
-    int fn=listS[Si];      
-    erase_susceptible(fn); 
-  }
-  gstate.I1+=I;
   gstate.inf_imported+=I;
+
 }
 
 ///////////////////////////////////////////////////////////////////////////////
