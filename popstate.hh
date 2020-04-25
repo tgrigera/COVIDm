@@ -27,6 +27,9 @@
 
 #include "geoave.hh"
 
+#include "gillespieav.hh"
+
+
 //
 // Print source context (for debugging)
 #define I_AM_HERE \
@@ -138,8 +141,14 @@ public:
     Closeav(-0.5*deltat,1.,deltat),
     Commav(-0.5*deltat,1.,deltat),
     Nav(-0.5*deltat,1.,deltat),
-    betaav(-0.5*deltat,1.,deltat)
+    betaav(-0.5*deltat,1.,deltat),
+
+    gillav(0,1)
   {}
+
+
+  Gillespie_av<SEEIIRistate> gillav;
+
 
   const char* header();
   void print(std::ostream&,bool print_time=true);

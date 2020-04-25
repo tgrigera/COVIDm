@@ -229,6 +229,9 @@ const char *SEEIIRstate_av::header()
 
 void SEEIIRstate_av::push(double time,SEEIIRistate &s)
 {
+  gillav.push(time,s);
+  return;
+
   Nav.push(time,s.N);
   Sav.push(time,s.S);
   E1av.push(time,s.E1);
