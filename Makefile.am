@@ -5,7 +5,7 @@
 #
 
 
-bin_PROGRAMS = sir sir_m sir_f seeiir_i1 seeiir_i2 seeiir_i3
+bin_PROGRAMS = sir sir_m sir_f seeiir_i1 seeiir_i2 seeiir_i3 seeiir_h
 
 sir_SOURCES = sir.cc qdrandom.cc
 
@@ -21,6 +21,8 @@ seeiir_i2_CPPFLAGS = -DSEEIIR_IMPLEMENTATION_2
 
 seeiir_i3_SOURCES = seeiir_main.cc bsearch.cc popstate.cc geoave.cc qdrandom.cc
 seeiir_i3_CPPFLAGS = -DSEEIIR_IMPLEMENTATION_3
+
+seeiir_h_SOURCES = seeiir_h.cc  qdrandom.cc bsearch.cc popstate.cc geoave.cc
 
 noinst_HEADERS = bsearch.hh qdrandom.hh read_arg.hh popstate.hh geoave.hh
 

@@ -182,8 +182,7 @@ inline void SEIRPopulation::set_beta_out(double beta)
 /*
  * compute_rates()
  *
- * This computes the cumulative rates of all events and updates the
- * first_susceptible_in_list field of the families vector
+ * This computes the cumulative rates of all events
  *
  */
 void SEIRPopulation::compute_rates()

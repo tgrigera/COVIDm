@@ -1,0 +1,16 @@
+# Nlevels
+#  2
+# Number of nodes at each level
+# 
+# Nfamilies   Mmax
+  128000       5
+ 0.
+ 0.
+ 2.
+ 4.
+ 2.
+# File to read imported infections
+imported_infections.dat
+# Rate constants vs time
+# time beta_1 beta_2 ... beta_Nlevels sigma_1 sigma_2 gamma_1 gamma_2
+0    0.4 0.03      0.1 0.1    0.3 0.3
