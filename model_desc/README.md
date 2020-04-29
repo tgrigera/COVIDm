@@ -1,6 +1,8 @@
 
 # Model description
 
+The models implemented in COVIDm are the following.
+
 ## Fully-connected SIR
 
 The population is composed of <img src="/model_desc/tex/f9c4988898e7f532b9f826a75014ed3c.svg?invert_in_darkmode&sanitize=true" align=middle width=14.99998994999999pt height=22.465723500000017pt/> indistinguishable individuals,
@@ -88,3 +90,58 @@ and give the name of a file with the
 file giving a time at which <img src="/model_desc/tex/a549abb698d8c2c1db04d5502c7e297f.svg?invert_in_darkmode&sanitize=true" align=middle width=28.24783829999999pt height=22.831056599999986pt/> is changed, and its new value.
 Be sure to give a reasonable value at <img src="/model_desc/tex/1c899e1c767eb4eac89facb5d1f2cb0d.svg?invert_in_darkmode&sanitize=true" align=middle width=36.07293689999999pt height=21.18721440000001pt/>, otherwise the simulation will start
 with a negative <img src="/model_desc/tex/8217ed3c32a785f0b5aad4055f432ad8.svg?invert_in_darkmode&sanitize=true" align=middle width=10.16555099999999pt height=22.831056599999986pt/>.
+
+
+## Hierarchical SEEIIR
+
+The hierarchical SEEIIR model is a generalization of the SEEIIR with
+families as described above, with several hierarchical levels of
+aggregation: individuals are grouped in families, which are grouped in
+neighborhoods, which are grouped in towns, etc.  Infections can result
+through contacts with individuals of the same family, or neighborhood,
+etc, and each of these levels carries a different <img src="/model_desc/tex/8217ed3c32a785f0b5aad4055f432ad8.svg?invert_in_darkmode&sanitize=true" align=middle width=10.16555099999999pt height=22.831056599999986pt/>.
+
+The individual that contracts the disease goes from state <img src="/model_desc/tex/e257acd1ccbe7fcb654708f1a866bfe9.svg?invert_in_darkmode&sanitize=true" align=middle width=11.027402099999989pt height=22.465723500000017pt/> to <img src="/model_desc/tex/cc5d1b1ed1bb46a5b9c4cb510b29c8d8.svg?invert_in_darkmode&sanitize=true" align=middle width=18.687266399999988pt height=22.465723500000017pt/>
+to <img src="/model_desc/tex/be655e6ff5e921809983a59b05ec05b4.svg?invert_in_darkmode&sanitize=true" align=middle width=18.687266399999988pt height=22.465723500000017pt/> to <img src="/model_desc/tex/d906cd9791e4b48a3b848558acda5899.svg?invert_in_darkmode&sanitize=true" align=middle width=13.77859724999999pt height=22.465723500000017pt/> to <img src="/model_desc/tex/9eff113852463b85a970d2d65d52280c.svg?invert_in_darkmode&sanitize=true" align=middle width=13.77859724999999pt height=22.465723500000017pt/> to <img src="/model_desc/tex/1e438235ef9ec72fc51ac5025516017c.svg?invert_in_darkmode&sanitize=true" align=middle width=12.60847334999999pt height=22.465723500000017pt/> as above, only that we now allow for
+for the rate for <img src="/model_desc/tex/1129ab5181dbe8cda1795ec5fccdafec.svg?invert_in_darkmode&sanitize=true" align=middle width=63.76704509999999pt height=22.465723500000017pt/> to be different from the rate for
+<img src="/model_desc/tex/4636946a03c94fd533ae50ebd4c2313e.svg?invert_in_darkmode&sanitize=true" align=middle width=58.85837594999998pt height=22.465723500000017pt/> (and similarly for <img src="/model_desc/tex/fa8ccd846b012105ff0c97ed5e7841be.svg?invert_in_darkmode&sanitize=true" align=middle width=53.94970844999998pt height=22.465723500000017pt/> and <img src="/model_desc/tex/1f444b2c14bf25cb4fe0d9355f156807.svg?invert_in_darkmode&sanitize=true" align=middle width=52.77958454999999pt height=22.465723500000017pt/>).  The <img src="/model_desc/tex/84df98c65d88c6adf15d4645ffa25e47.svg?invert_in_darkmode&sanitize=true" align=middle width=13.08219659999999pt height=22.465723500000017pt/>
+states are not contagious.
+
+The different aggregation categories (families, neighborhoods, etc.)
+are called _levels_.  Level 0 is the individual, level 1 the family
+and so on.  The [parameter file](./seeiir_h_par.dat) specifies the
+number <img src="/model_desc/tex/ddcb483302ed36a59286424aa5e0be17.svg?invert_in_darkmode&sanitize=true" align=middle width=11.18724254999999pt height=22.465723500000017pt/> of levels, and gives at each level the number <img src="/model_desc/tex/a28763d9579bce99319cd8520393ee02.svg?invert_in_darkmode&sanitize=true" align=middle width=20.171302799999992pt height=22.465723500000017pt/> of
+entities of level <img src="/model_desc/tex/b4ba0aa01606a3064bb00827756e5407.svg?invert_in_darkmode&sanitize=true" align=middle width=33.53874479999999pt height=22.831056599999986pt/> for each level <img src="/model_desc/tex/2f2322dff5bde89c37bcae4116fe20a8.svg?invert_in_darkmode&sanitize=true" align=middle width=5.2283516999999895pt height=22.831056599999986pt/> group.  For example, if
+<img src="/model_desc/tex/0e312230f7e3bbd18f2262defcbf18b4.svg?invert_in_darkmode&sanitize=true" align=middle width=41.32408334999999pt height=22.465723500000017pt/> there will be only one group at <img src="/model_desc/tex/4f4dd296c2b8cc8358b3bcfa857581f7.svg?invert_in_darkmode&sanitize=true" align=middle width=35.36518424999999pt height=22.831056599999986pt/> (the whole population),
+<img src="/model_desc/tex/7edb093218f7ba2b5c51886398fa9caf.svg?invert_in_darkmode&sanitize=true" align=middle width=22.500061649999992pt height=22.465723500000017pt/> groups at level 2, <img src="/model_desc/tex/dced8cd0d35e2af2d3499c10d7ee6289.svg?invert_in_darkmode&sanitize=true" align=middle width=22.500061649999992pt height=22.465723500000017pt/> groups at level 1 (families) and each
+level 1 group will have <img src="/model_desc/tex/6f549764f2f97bec950c14de5352994a.svg?invert_in_darkmode&sanitize=true" align=middle width=22.500061649999992pt height=22.465723500000017pt/> individuals.  It is possible to ask that
+<img src="/model_desc/tex/a28763d9579bce99319cd8520393ee02.svg?invert_in_darkmode&sanitize=true" align=middle width=20.171302799999992pt height=22.465723500000017pt/> be randomly variable: if <img src="/model_desc/tex/a28763d9579bce99319cd8520393ee02.svg?invert_in_darkmode&sanitize=true" align=middle width=20.171302799999992pt height=22.465723500000017pt/> is negative, the program takes
+<img src="/model_desc/tex/346b9c00599fbecd7cf0c2b7ea91d5ef.svg?invert_in_darkmode&sanitize=true" align=middle width=30.12564719999999pt height=24.65753399999998pt/> as the maximum allowed <img src="/model_desc/tex/a28763d9579bce99319cd8520393ee02.svg?invert_in_darkmode&sanitize=true" align=middle width=20.171302799999992pt height=22.465723500000017pt/>, then reads the probabilies for
+<img src="/model_desc/tex/a28763d9579bce99319cd8520393ee02.svg?invert_in_darkmode&sanitize=true" align=middle width=20.171302799999992pt height=22.465723500000017pt/> taking the values <img src="/model_desc/tex/0303c5a1ee56220c3888ff7d03329325.svg?invert_in_darkmode&sanitize=true" align=middle width=74.87427254999999pt height=24.65753399999998pt/> (actually the numbers are
+weights rather than probabilities, since they do not need to be
+normalized).
+
+To write the transition rates, give all groups a unique number, and
+let <img src="/model_desc/tex/47c8695a1a41562d3801560166cd7b65.svg?invert_in_darkmode&sanitize=true" align=middle width=20.899093049999987pt height=14.15524440000002pt/> be the number of the group of level <img src="/model_desc/tex/2f2322dff5bde89c37bcae4116fe20a8.svg?invert_in_darkmode&sanitize=true" align=middle width=5.2283516999999895pt height=22.831056599999986pt/> to which
+individual <img src="/model_desc/tex/77a3b857d53fb44e33b53e4c8b68351a.svg?invert_in_darkmode&sanitize=true" align=middle width=5.663225699999989pt height=21.68300969999999pt/> belongs.  Calling <img src="/model_desc/tex/e26c6c2e6496281c577e8a53df97e30a.svg?invert_in_darkmode&sanitize=true" align=middle width=61.236859199999984pt height=24.65753399999998pt/> the number of
+individuals of group <img src="/model_desc/tex/4539837d61243d7054004fb10a411d9a.svg?invert_in_darkmode&sanitize=true" align=middle width=20.89909469999999pt height=14.15524440000002pt/> in state <img src="/model_desc/tex/cbfb1b2a33b28eab8a3e59464768e810.svg?invert_in_darkmode&sanitize=true" align=middle width=14.908688849999992pt height=22.465723500000017pt/>, the transition rates
+are
+
+<p align="center"><img src="/model_desc/tex/e6ca712b07b66835ba131ba957d3cf71.svg?invert_in_darkmode&sanitize=true" align=middle width=477.3415845pt height=170.70283229999998pt/></p>
+
+The L+4 rate constants (<img src="/model_desc/tex/bf9b6c39addb984a496459e55f667729.svg?invert_in_darkmode&sanitize=true" align=middle width=71.51812799999999pt height=22.831056599999986pt/>, <img src="/model_desc/tex/9811b1e861c58c0f72de45f573e7eea4.svg?invert_in_darkmode&sanitize=true" align=middle width=15.94565279999999pt height=14.15524440000002pt/>,
+<img src="/model_desc/tex/0318cc8a44e98dfa8db4cd5b6f731ed4.svg?invert_in_darkmode&sanitize=true" align=middle width=15.94565279999999pt height=14.15524440000002pt/>, <img src="/model_desc/tex/f4d2e02931a81ed37d695634192ebed9.svg?invert_in_darkmode&sanitize=true" align=middle width=15.06318824999999pt height=14.15524440000002pt/>, <img src="/model_desc/tex/b20edd7d59cbe61f6558fa4a05eaacea.svg?invert_in_darkmode&sanitize=true" align=middle width=15.06318824999999pt height=14.15524440000002pt/>) are given at the end of the
+parameter file, as a function of time: at the time given in the first
+column, the constants are set to the given values.  It is necessary to
+give a line with the values at time 0, additional lines with different
+times are only given if changes are desired.
+
+Finally, as in the SEEIIR model above, the population is initialized
+to all S, so infected individuals must be introduced in order to start
+the epidemic.  The external infections are read from a two-column
+[file](./imported_infections.dat) giving time and number of imported
+cases.  The second column is interpreted as the cumulative total
+cases, not new cases.  At the specifed time a number of S individuals
+are forced to state <img src="/model_desc/tex/d906cd9791e4b48a3b848558acda5899.svg?invert_in_darkmode&sanitize=true" align=middle width=13.77859724999999pt height=22.465723500000017pt/> so that the total count of imported cases
+matches the number given in the file.  Both times and cases must be
+monotonically increasing.
