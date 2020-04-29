@@ -22,6 +22,11 @@ described [[./model_desc/README.md][here]]):
   - seeiir_i1, seeiir_i2, seeiir_i3 :: Three implementations of a
     SEEIIR model, with population divided in families.
 
+  - seeiir_h ::  Hierarchical SEEIIR (individuals are grouped in
+    families, families in neighborhoods, etc).  ~seeiir_h_nol~ is an
+    alternative implementation without use of the LEMON library, but
+    is somewhat slower.
+
 All models mentioned are implemented in their stochastic variants.
 The programs read a few arguments from the command line, and the model
 parameters from a parameter file.  Running the programs without
@@ -42,6 +47,7 @@ the [[./model_desc][model_desc]] directory:
  - [[./model_desc/sir_par.dat][sir_par.dat]] :: for =sir= and =sir_m=
  - [[./model_desc/sir_par.dat][sir_f_par.dat]] :: for =sir_f=
  - [[./model_desc/seeiir_par.dat][seeiir_par.dat]] :: for =seeiir_i1=, =seeiir_i2= and =seeiir_i3=
+ - [[file:model_desc/seeiir_h_par.dat::# Nlevels][seeiir_h_par.dat]] :: for =seeiir_h= and =seeir_h_nol=
 
 For the meaning of the parameters, see the [[./model_desc/README.md][model description]].
 
@@ -52,7 +58,7 @@ You can download one of the release tarballs or, for the latest
 version, from the latest commit (clicking =clone or downlaod= above).
 
 To build form the latest commit install ~autoconf~ and ~automake~.
-First generate the configure~ script: in the source directory do
+First generate the ~configure~ script: in the source directory do
 
 : autoreconf -if
 
@@ -66,10 +72,15 @@ Then proceed to configure and make:
 : sudo make install
 
 This installs in =/usr/local=, you can give =--prefix= to the
-~configure~ script to change this.  The development versions of the
-following libraries are required to build, you will get a configure
-error if they are missing:
+~configure~ script to change this.  The ~make~ stage will fail unless
+the configure script runs till the end.  If you don't see the message
+: configure: creating ./config.status
+in the last few lines, the configuration has failed, probably due to
+missing libraries.
+
+The following libraries are required to build.  With Linux package
+managers, you typically need to install the /development/ version of
+the package.
 
  - GNU Scientific library
-
-
+ - LEMON (Library for Efficient Modeling and Optimization in Networks)
