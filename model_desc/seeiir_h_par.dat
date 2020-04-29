@@ -1,0 +1,27 @@
+# Nlevels
+  4
+# Now come the number of descendants of each node at each level.
+# A negative number (-M)  indicates fluctuating number:
+# absolute value of that number then will be the maximum number, give then the
+# wheights of the numbers from 1 to M
+#
+# Level 4 has only 1 node (global community)
+# Number of level 3 nodes ("towns")
+5
+# Number of level 2 nodes per level 3 node  ("neighborhoods" per "town")
+5
+# Number of level 1 nodes ("families") per level 2 node ("neighborhood")
+  1280
+# Number of level 0 nodes (individuals) per family, this fluctuates from 1 to 6:
+  -6
+  20
+  25
+  20
+  18
+  12
+  5
+# File to read imported infections
+imported_infections.dat
+# Rate constants vs time
+# time beta_1 beta_2 ... beta_Nlevels sigma_1 sigma_2 gamma_1 gamma_2
+0      0.4  0.03 0.03 0.04     0.1 0.1    0.3 0.3

@@ -30,6 +30,8 @@
  *
  */
 
+#define NDEBUG
+
 #include <iostream>
 #include <cstdio>
 #include <list>
@@ -76,7 +78,6 @@ std::ostream& operator<<(std::ostream& o,const rates_t &r)
   return o; 
 }
 
-
 /*
  * options
  *
@@ -89,11 +90,10 @@ struct opt {
   int    steps;
   long   seed;
 
-  int         levels;       // tree depth (not counting individuals)
-  int         Nfamilies;    // Total number of families
-  int         Mmax;         // Maximum family size
-  double      *PM;          // Family size distribution
-  std::string eifile;       // File to read imported infected cases
+  int               levels;       // tree depth (not counting individuals)
+  std::vector<int>  M;            // number of descendants at each level (negative=fluctuating)
+  std::vector<std::vector<double>> PM; // Distribution of descendants
+  std::string eifile;             // File to read imported infected cases
 
   // imported infections
   struct ei {double time; int I;} ;
@@ -104,7 +104,6 @@ struct opt {
   rates_vs_time_t                       rates_vs_time;
 
   opt() : last_arg_read(0) {}
-  ~opt() {delete[] PM;}
 
 } options;
 
@@ -145,35 +144,54 @@ void read_parameters(int argc,char *argv[])
   read_arg(argv,options.steps);
   read_arg(argv,options.Nruns);
 
-  options.levels=2;
-
   FILE *f=fopen(options.ifile,"r");
   if (f==0) throw std::runtime_error(strerror(errno));
+
   char *buf=readbuf(f);
-  sscanf(buf,"%d %d",&options.Nfamilies,&options.Mmax);
-  options.PM=new double[options.Mmax+1];
-  options.PM[0]=0;
-  for (int M=1; M<=options.Mmax; ++M) {
+  sscanf(buf,"%d",&options.levels);
+  printf("##### Parameters\n");
+  printf("# Nlevels = %d\n",options.levels);
+
+  options.M.resize(options.levels+1);
+  options.PM.resize(options.levels+1);
+  for (int lev=options.levels; lev>0; --lev) {
     buf=readbuf(f);
-    sscanf(buf,"%lg",options.PM+M);
+    sscanf(buf,"%d",&(options.M[lev]));
+    if (options.M[lev]<0) {
+      options.PM[lev].resize(-options.M[lev]+1);
+      options.PM[lev][0]=0.;
+      for (int M=1; M<=-options.M[lev]; ++M) {
+	buf=readbuf(f);
+	sscanf(buf,"%lg",&(options.PM[lev][M]));
+      }
+    }
   }
+
+  for (int lev=options.levels; lev>0; --lev) {
+    printf("# Number of descendants at level %d = ",lev);
+    if (options.M[lev]>0) printf("%d\n",options.M[lev]);
+    else {
+      printf(" 1 to %d, with weights: \n",-options.M[lev]);
+      for (int i=1; i<options.PM[lev].size(); ++i)
+	printf("#       %d:   %g\n",i,options.PM[lev][i]);
+    }
+  }
+
+
+  printf("#\n# Nruns = %d\n",options.Nruns);
+
   buf=readbuf(f);
   options.eifile=buf;
   options.eifile.erase(options.eifile.end()-1);   // remove trailing newline
-  read_rates_vs_time(f);
-  fclose(f);
   read_imported_infections();
 
-  printf("##### Parameters\n");
-  printf("# Nfamilies = %d\n",options.Nfamilies);
-  printf("# Mmax      = %d\n",options.Mmax);
-  for (int i=1; i<=options.Mmax; ++i)
-    printf("# P[%d]    = %g\n",i,options.PM[i]);
-  printf("# Nruns = %d\n",options.Nruns);
   printf("# Imported infections:\n");
   printf("# Time   Cases\n");
   for (auto iir: options.imported_infections)
     printf("# %g %d\n",iir.time,iir.I);
+
+  read_rates_vs_time(f);
+  fclose(f);
 
   printf("#\n# Rate constatst:\n");
   printf("# time ");
@@ -320,7 +338,7 @@ struct node_data {
 std::ostream& operator<<(std::ostream& o,const node_data &nd)
 {
   std::cout << "level = " << nd.level << " N = " << nd.N << " M = " << nd.M
-    	    << "\n       S, E1, E2, I1, I2, R "
+    	    << "         S, E1, E2, I1, I2, R "
 	    << nd.S << ' ' << nd.E1 << ' ' << nd.E2 << ' '
 	    << nd.I1 << ' ' << nd.I2 << ' ' << nd.R << '\n';
   return o; 
@@ -395,6 +413,7 @@ private:
   template <typename readF1,typename readF2>
   void update_counts(node_t l0node);
   void update_after_erase_susceptible(node_t node);
+  void count_infection_kind(node_t node);
 } ;
 
 SEIRPopulation::SEIRPopulation(int levels,int (*noffspring)(int) ) :
@@ -489,7 +508,7 @@ void SEIRPopulation::recompute_counts()
 	noded.R+=sond.R;
       }
       if (noded.I1+noded.I2>0) infected_nodes.push_back(node);
-      Nprev=noded.N;
+      Nprev+=noded.S;
     }
   }
 }
@@ -497,15 +516,23 @@ void SEIRPopulation::recompute_counts()
 void SEIRPopulation::check_structures()
 {
   node_data& rootd=treemap[root];
+
+  std::cerr << "Checking tree\n";
   
-  std::cerr << rootd;
-  // for (lemon::ListDigraph::NodeIt n(tree); n != lemon::INVALID; ++n)
-  //   std::cout << treemap[n];
+  // for (int l=levels; l>0; --l) {
+  //   std::cout << "***** Level " << l << '\n';
+  //   for (auto nn: level_nodes[l]) {
+  //     std::cout << treemap[nn];
+  //     std::cout << "      firstS " << treemap[nn].first_S_in_list << '\n';
+  //   }
+  // }
 
   assert(listS.size()==rootd.S);
-  for (node_t &node: listS) {
+  for (int is=0; is<listS.size(); ++is) {
+    node_t node=listS[is];
     assert(treemap[node].level==1);
     assert(treemap[node].S>0);
+    assert(treemap[node].first_S_in_list<=is);
   }
   assert(listE1.size()==rootd.E1);
   for (node_t &node: listE1) {
@@ -529,6 +556,18 @@ void SEIRPopulation::check_structures()
   }
   for (node_t &node: infected_nodes) {
     assert(treemap[node].I1+treemap[node].I2>0);
+  }
+
+  for (int l=levels; l>0; --l) {
+    for (auto nn: level_nodes[l]) {
+      auto nnd=treemap[nn];
+      if (nnd.S>0) {
+	// std::cerr << nnd;
+	// std::cerr << "asserting,  " << treemap[listS[nnd.first_S_in_list]].first_S_in_list
+	// 	  <<  ">=" << nnd.first_S_in_list << '\n';
+	assert(treemap[listS[nnd.first_S_in_list]].first_S_in_list>=nnd.first_S_in_list);
+      }
+    }
   }
   
 }
@@ -556,16 +595,6 @@ void SEIRPopulation::compute_rates()
     cumrate.push_back(cr);
     events.push_back(ev);
   }
-  // for (int lev=levels; lev>0; --lev) {
-  //   for (node_t &node: level_nodes[lev]) {
-  //     ev.node=node;
-  //     node_data& noded=treemap[node];
-  //     double norm = lev>1 ? 1./(noded.N-1) : 1;
-  //     cr += noded.S * rates.beta[lev] * (noded.I1 + noded.I2) * norm;
-  //     cumrate.push_back(cr);
-  //     events.push_back(ev);
-  //   }
-  // }
 
   // the other events are only global
   ev.node=root;
@@ -628,6 +657,7 @@ void SEIRPopulation::apply_event(int evn)
     listI1.push_back(l1node);         // update lists
     listE2.erase(listi);
     update_counts<readE2,readI1>(l1node);
+    count_infection_kind(l1node);
     break;
 
   case epidemiological_event::I1I2:
@@ -696,6 +726,21 @@ void SEIRPopulation::update_after_erase_susceptible(node_t node)
   }  while (arc!=lemon::INVALID &&  (node=tree.source(arc)) != lemon::INVALID );
 }
 
+// new infection in node, count kind
+void SEIRPopulation::count_infection_kind(node_t node)
+{
+  auto arc = graph_t::InArcIt(tree,node);
+  do {
+    node_data &noded=treemap[node];
+    int level=noded.level;
+    if (noded.I1+noded.I2>0) {
+      gdata.infections_level[level]++;
+      break;
+    }
+  }  while (arc!=lemon::INVALID &&  (node=tree.source(arc)) != lemon::INVALID );
+}
+
+
 void SEIRPopulation::add_imported(int I)
 {
   I-=gdata.infections_imported;  // This is the number of new cases
@@ -735,7 +780,6 @@ void run(SEIRPopulation &pop,SEEIIRstate *state)
   double last=-10;
 
   event_queue_t events=event_queue;
-
 
   // while (!events.empty()) {
   //   std::cerr  << "time type number " << events.front().time << " " << events.front().kind
@@ -794,7 +838,7 @@ void run(SEIRPopulation &pop,SEEIIRstate *state)
       gstate.R=rootd.R;
       gstate.inf_imported=pop.gdata.infections_imported;
       gstate.inf_close=pop.gdata.infections_level[1];
-      gstate.inf_community=pop.gdata.infections_level[2];
+      gstate.inf_community=pop.gdata.infections_level[pop.levels];
       gstate.beta_out=pop.rates.beta[2];
       state->push(time,gstate);
     }
@@ -802,30 +846,33 @@ void run(SEIRPopulation &pop,SEEIIRstate *state)
   }
 } 
 
-
-
 ///////////////////////////////////////////////////////////////////////////////
 //
 // main and noffspring
 //
 // noffspring provides the number of descendants at each tree level
 
-Discrete_distribution *Mdist;
+std::vector<Discrete_distribution*> Mdist;
+
+void prepare_noffspring()
+{
+  Mdist.resize(options.levels);
+  for (int l=options.levels; l>0; --l) {
+    if (options.M[l]<0) 
+      Mdist[l]=new Discrete_distribution(options.PM[l].size(),&(options.PM[l][0]));
+  }
+}
 
 int noffspring(int level)
 {
-  switch(level) {
-  case 2: return options.Nfamilies;
-  case 1: return (*Mdist)();
-  default: return 0;
-  }
+  if (options.M[level]>0) return options.M[level];
+  return (*(Mdist[level]))();
 }
 
 int main(int argc,char *argv[])
 {
   read_parameters(argc,argv);
   Random_number_generator RNG(options.seed);
-  Mdist = new Discrete_distribution(options.Mmax+1,options.PM);
   merge_events();
 
   // Prepare global state (for output) and population
@@ -834,6 +881,7 @@ int main(int argc,char *argv[])
           new SEEIIRstate_av : new SEEIIRstate;
   std::cout << state->header() << '\n';
 
+  prepare_noffspring();
   SEIRPopulation pop(options.levels,noffspring);
 
   // pop.check_structures();
@@ -850,5 +898,4 @@ int main(int argc,char *argv[])
     std::cout << *state;
 
   delete state;
-  delete Mdist;
 }
