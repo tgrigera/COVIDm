@@ -124,12 +124,12 @@ static void print_detail(std::ostream& o,const std::vector<double>& v)
 //
 // SIRstate
 
-void SIRstate::push(double time_,double S_,double I_,double R_)
+void SIRstate::push(double time_,SIRistate &s)
 {
   time=time_;
-  S[0]=S_;
-  I[0]=I_;
-  R[0]=R_;
+  S[0]=s.S;
+  I[0]=s.I;
+  R[0]=s.R;
 
   std::cout << *this << '\n';
 }
@@ -150,11 +150,11 @@ const char *SIRstate_av::header()
 }  
 
 
-void SIRstate_av::push(double time,double S_,double I_,double R_)
+void SIRstate_av::push(double time,SIRistate &s)
 {
-  Sav.push(time,S_);
-  Iav.push(time,I_);
-  Rav.push(time,R_);
+  Sav.push(time,s.S);
+  Iav.push(time,s.I);
+  Rav.push(time,s.R);
 }
 
 void SIRstate_av::print(std::ostream& o,bool print_time)
@@ -229,9 +229,6 @@ const char *SEEIIRstate_av::header()
 
 void SEEIIRstate_av::push(double time,SEEIIRistate &s)
 {
-  gillav.push(time,s);
-  return;
-
   Nav.push(time,s.N);
   Sav.push(time,s.S);
   E1av.push(time,s.E1);

@@ -35,6 +35,7 @@
 
 #include "qdrandom.hh"
 #include "popstate.hh"
+#include "gillespie_sampler.hh"
 
 #undef LATTICE_MC
 
@@ -142,11 +143,12 @@ void run_MC(SIRstate *state)
   int S=options.S0*options.N;
   int I=options.I0*options.N;
   int R=options.N-S-I;
-  double fS=(double) S/options.N;
-  double fI=(double) I/options.N;
-  double fR=(double) R/options.N;
+  SIRistate gstate;
+  gstate.S=(double) S/options.N;
+  gstate.I=(double) I/options.N;
+  gstate.R=(double) R/options.N;
 
-  state->push(0,fS,fI,fR);
+  state->push(0,gstate);
 
 #ifdef LATTICE_MC
   short *lat=new short[options.N];
@@ -168,10 +170,10 @@ void run_MC(SIRstate *state)
   	break;
       }
 
-    fS=(double) S/options.N;
-    fI=(double) I/options.N;
-    fR=(double) R/options.N;
-    state->push(t,fS,fI,fR);
+    gstate.S=(double) S/options.N;
+    gstate.I=(double) I/options.N;
+    gstate.R=(double) R/options.N;
+    state->push(t,gstate);
   }
   delete[] lat;
 #else
@@ -180,7 +182,10 @@ void run_MC(SIRstate *state)
       if (ran()<options.beta*I/options.N) { --S; ++I; }
     for (int i=0; i<I; ++i)
       if (ran()<options.gamma) { --I; ++R; }
-    state->push(t,(double) S/options.N,(double) I/options.N,(double) R/options.N);
+    gstate.S=(double) S/options.N;
+    gstate.I=(double) I/options.N;
+    gstate.R=(double) R/options.N;
+    state->push(t,gstate);
   }
 #endif
 }
@@ -199,7 +204,13 @@ void run_gillespie(SIRstate *state)
   int I=options.I0*options.N;
   int R=options.N-S-I;
 
-  state->push(0,(double) S/options.N,(double) I/options.N,(double) R/options.N);
+  Gillespie_sampler<SIRstate,SIRistate> gsamp(*state,0,options.steps,1);
+
+  SIRistate gstate;
+  gstate.S=(double) S/options.N;
+  gstate.I=(double) I/options.N;
+  gstate.R=(double) R/options.N;
+  gsamp.push_data(gstate);
 
   double time=0;
   double last=0;
@@ -210,11 +221,11 @@ void run_gillespie(SIRstate *state)
     double pinf=options.beta*I*S/options.N;
     double prec=options.gamma*I;
     double pany=pinf+prec;
-    if (pany==0.) break;
 
     // advance time
     double deltat=rexp(1./pany);
     time+=deltat;
+    gsamp.push_time(time);
 
     // choose the transition and apply it
     if (ran()<pinf/pany) {  // chose infeccion
@@ -224,11 +235,11 @@ void run_gillespie(SIRstate *state)
       --I;
       ++R;
     }
-    
-    if (time>last+1.) {
-      last=time;
-      state->push(time,(double) S/options.N,(double) I/options.N,(double) R/options.N);
-    }
+
+    gstate.S=(double) S/options.N;
+    gstate.I=(double) I/options.N;
+    gstate.R=(double) R/options.N;
+    gsamp.push_data(gstate);
 
   }
 }

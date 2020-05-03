@@ -27,9 +27,6 @@
 
 #include "geoave.hh"
 
-#include "gillespieav.hh"
-
-
 //
 // Print source context (for debugging)
 #define I_AM_HERE \
@@ -72,11 +69,15 @@ inline std::ostream& operator<<(std::ostream& o,Population_state& state)
 //
 // SIRstate
 
+struct SIRistate {
+  double S,I,R;
+} ;
+
 class SIRstate : public Population_state {
 public:
   SIRstate() :
     Population_state(1,0,1,1) {}
-  virtual void push(double time,double S,double I,double R);
+  virtual void push(double time,SIRistate &istate);
 } ;
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -94,7 +95,7 @@ public:
 
   const char* header();
   void print(std::ostream&,bool print_time=true);
-  void push(double time,double S,double I,double R);
+  void push(double time,SIRistate &istate);
 
 private:
   Geoave Sav,Iav,Rav;
@@ -141,14 +142,8 @@ public:
     Closeav(-0.5*deltat,1.,deltat),
     Commav(-0.5*deltat,1.,deltat),
     Nav(-0.5*deltat,1.,deltat),
-    betaav(-0.5*deltat,1.,deltat),
-
-    gillav(0,1)
+    betaav(-0.5*deltat,1.,deltat)
   {}
-
-
-  Gillespie_av<SEEIIRistate> gillav;
-
 
   const char* header();
   void print(std::ostream&,bool print_time=true);
