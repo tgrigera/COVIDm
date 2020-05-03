@@ -85,6 +85,9 @@ public:
   void push(double time,double e); ///< Add pair (first argument is interpreted as time)
   void get_aves(std::vector<double>& time,std::vector<double>& ave,
 		std::vector<double>& var) const; ///< Returns the abcissas \f$s_0\f$, averages and variance (vectors given are first cleared)
+  double ave(int i) const {return rave[i];}
+  double var(int i) const {return rvarn[i]/(count[i]-1); }
+  int Nsamp(int i) const {return count[i];}
 
 private:
   double              base,t0,wfactor;

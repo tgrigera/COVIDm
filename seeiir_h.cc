@@ -65,8 +65,10 @@ struct rates_t {
   double sigma1,sigma2,gamma1,gamma2;
 
   rates_t(int levels) :
-    time(0.), sigma1(0), sigma2(0), gamma1(0), gamma2(0)
-  {beta.resize(levels+1,0.);}
+    time(0.),
+    beta(levels+1,0.),
+    sigma1(0), sigma2(0), gamma1(0), gamma2(0)
+  {}
 } ;
 
 std::ostream& operator<<(std::ostream& o,const rates_t &r)
@@ -315,8 +317,9 @@ struct global_data {
   std::vector<int> infections_level;
 
   global_data(int levels) :
-    infections_imported(0)
-  {infections_level.resize(levels+1,0);}
+    infections_imported(0),
+    infections_level(levels+1,0)
+  {}
 } ;
 
 struct node_data {
@@ -467,6 +470,7 @@ void SEIRPopulation::set_all_S()
   recompute_counts();
   gdata.infections_imported=0;
   gdata.infections_level.resize(levels+1,0);
+  std::fill(gdata.infections_level.begin(),gdata.infections_level.end(),0.);
 }
 
 void SEIRPopulation::recompute_counts()
@@ -780,16 +784,6 @@ void run(SEIRPopulation &pop,SEEIIRstate *state)
   double last=-10;
 
   event_queue_t events=event_queue;
-
-  // while (!events.empty()) {
-  //   std::cerr  << "time type number " << events.front().time << " " << events.front().kind
-  // 	       << " " << events.front().enumber << '\n';
-  //   events.pop();
-  // }
-
-  // exit(1);
-
-
   SEEIIRistate gstate;
 
   while (time<options.steps) {
