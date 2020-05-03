@@ -31,6 +31,7 @@
 #include "qdrandom.hh"
 #include "popstate.hh"
 #include "bsearch.hh"
+#include "gillespie_sampler.hh"
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -259,14 +260,15 @@ void Population::event(int f,double r)   // Do infection or recovery on family f
 
 void run(Population &pop,SIRstate *state)
 {
-  double fS=(double) pop.gstate.S/pop.gstate.N;
-  double fI=(double) pop.gstate.I/pop.gstate.N;
-  double fR=(double) pop.gstate.R/pop.gstate.N;
-
-  state->push(0,fS,fI,fR);
+  SIRistate istate;
+  Gillespie_sampler<SIRstate,SIRistate> gsamp(*state,0.,options.steps,1.);
+  
+  istate.S=(double) pop.gstate.S/pop.gstate.N;
+  istate.I=(double) pop.gstate.I/pop.gstate.N;
+  istate.R=(double) pop.gstate.R/pop.gstate.N;
+  gsamp.push_data(istate);
 
   double time=0;
-  double last=0;
   Exponential_distribution rexp;
   Uniform_real ran(0,1.);
 
@@ -275,26 +277,20 @@ void run(Population &pop,SIRstate *state)
     // compute transition probabilities
     pop.compute_rates();
     double mutot=pop.total_rate;
-    if (mutot==0.) break;
-
     // advance time
     double deltat=rexp(1./mutot);
     time+=deltat;
+    gsamp.push_time(time);
 
     // choose the transition and apply it
     double r=ran()*mutot;
     int f=bsearch(r,pop.cumrate);      // choose family
     pop.event(f,r-pop.cumrate[f]);     // choose and apply event
     
-    if (time>last+1.) {
-      last=time;
-      fS=(double) pop.gstate.S/pop.gstate.N;
-      fI=(double) pop.gstate.I/pop.gstate.N;
-      fR=(double) pop.gstate.R/pop.gstate.N;
-
-      state->push(time,fS,fI,fR);
-    }
-
+    istate.S=(double) pop.gstate.S/pop.gstate.N;
+    istate.I=(double) pop.gstate.I/pop.gstate.N;
+    istate.R=(double) pop.gstate.R/pop.gstate.N;
+    gsamp.push_data(istate);
   }
 }
 
