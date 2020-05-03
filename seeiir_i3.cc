@@ -25,6 +25,8 @@
 
 #include <assert.h>
 
+#include "gillespie_sampler.hh"
+
 ///////////////////////////////////////////////////////////////////////////////
 //
 // Simulation
@@ -359,24 +361,26 @@ void run(SEIRPopulation &pop,SEEIIRstate *state)
   Exponential_distribution rexp;
   Uniform_real ran(0,1.);
   double deltat,time=0;
-  double last=-10;
 
+  Gillespie_sampler<SEEIIRstate,SEEIIRistate> gsamp(*state,0.,options.steps,1.);
+  gsamp.push_data(pop.gstate);
+  
   event_queue_t events=event_queue;
 
-  while (time<options.steps) {
+  while (time<=options.steps) {
 
     // compute transition probabilities
     pop.compute_rates();
     double mutot=pop.total_rate;
-
     // advance time
     deltat=rexp(1./mutot);
     time+=deltat;
 
     if (time>=events.front().time) {              // imported infections or beta change
 
-      if (events.size()==1) break;
       time=events.front().time;
+      gsamp.push_time(time);
+      if (events.size()==1) break;
 
       switch (events.front().kind) {
       case event::infection:
@@ -390,6 +394,7 @@ void run(SEIRPopulation &pop,SEEIIRstate *state)
 
     } else {
 
+      gsamp.push_time(time);
       // choose the transition and apply it
       double r=ran()*mutot;
       int e=bsearch(r,pop.cumrate);      // choose event
@@ -408,10 +413,7 @@ void run(SEIRPopulation &pop,SEEIIRstate *state)
 	
     }
 
-    if (time>=last+1.) {  // print or accumulate average
-      last=time;
-      state->push(time,pop.gstate);
-    }
+    gsamp.push_data(pop.gstate);
 
   }
 }
