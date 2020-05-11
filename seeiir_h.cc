@@ -50,6 +50,7 @@
 #include "qdrandom.hh"
 #include "popstate.hh"
 #include "bsearch.hh"
+#include "gillespie_sampler.hh"
 
 ///////////////////////////////////////////////////////////////////////////////
 //
@@ -785,21 +786,23 @@ void run(SEIRPopulation &pop,SEEIIRstate *state)
 
   event_queue_t events=event_queue;
   SEEIIRistate gstate;
+  Gillespie_sampler<SEEIIRstate,SEEIIRistate> gsamp(*state,0.,options.steps,1.);
+  gsamp.push_data(gstate);
 
-  while (time<options.steps) {
+  while (time<=options.steps) {
 
     // compute transition probabilities
     pop.compute_rates();
     double mutot=pop.total_rate;
-
     // advance time
     deltat=rexp(1./mutot);
     time+=deltat;
 
     if (time>=events.front().time) {              // imported infections or beta change
 
-      if (events.size()==1) break;
       time=events.front().time;
+      gsamp.push_time(time);
+      if (events.size()==1) break;
 
       switch (events.front().kind) {
       case event::infection:
@@ -813,6 +816,7 @@ void run(SEIRPopulation &pop,SEEIIRstate *state)
 
     } else {
 
+      gsamp.push_time(time);
       // choose the transition and apply it
       double r=ran()*mutot;
       int e=bsearch(r,pop.cumrate);
@@ -820,22 +824,20 @@ void run(SEIRPopulation &pop,SEEIIRstate *state)
 	
     }
 
-    if (time>=last+1.) {  // print or accumulate average
-      last=time;
-      node_data &rootd=pop.treemap[pop.root];
-      gstate.N=rootd.N;
-      gstate.S=rootd.S;
-      gstate.E1=rootd.E1;
-      gstate.E2=rootd.E2;
-      gstate.I1=rootd.I1;
-      gstate.I2=rootd.I2;
-      gstate.R=rootd.R;
-      gstate.inf_imported=pop.gdata.infections_imported;
-      gstate.inf_close=pop.gdata.infections_level[1];
-      gstate.inf_community=pop.gdata.infections_level[pop.levels];
-      gstate.beta_out=pop.rates.beta[2];
-      state->push(time,gstate);
-    }
+    node_data &rootd=pop.treemap[pop.root];
+    gstate.N=rootd.N;
+    gstate.S=rootd.S;
+    gstate.E1=rootd.E1;
+    gstate.E2=rootd.E2;
+    gstate.I1=rootd.I1;
+    gstate.I2=rootd.I2;
+    gstate.R=rootd.R;
+    gstate.inf_imported=pop.gdata.infections_imported;
+    gstate.inf_close=pop.gdata.infections_level[1];
+    gstate.inf_community=pop.gdata.infections_level[pop.levels];
+    gstate.beta_out=pop.rates.beta[2];
+
+    gsamp.push_time(time);
 
   }
 } 
