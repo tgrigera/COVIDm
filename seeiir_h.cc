@@ -738,7 +738,7 @@ void SEIRPopulation::count_infection_kind(node_t node)
   do {
     node_data &noded=treemap[node];
     int level=noded.level;
-    if (noded.I1+noded.I2>0) {
+    if (noded.I1+noded.I2+noded.R>1 || level==levels) {         // counts have already been updated, so there must be at least one infected
       gdata.infections_level[level]++;
       break;
     }
