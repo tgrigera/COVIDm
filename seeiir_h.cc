@@ -742,6 +742,7 @@ void SEIRPopulation::count_infection_kind(node_t node)
       gdata.infections_level[level]++;
       break;
     }
+    arc=graph_t::InArcIt(tree,node);
   }  while (arc!=lemon::INVALID &&  (node=tree.source(arc)) != lemon::INVALID );
 }
 
