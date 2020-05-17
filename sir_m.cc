@@ -1,13 +1,11 @@
 /*
  * sir_m.cc
  *
- * Monte Carlo simulation of simple mean-field stochastic SIR.  This
- * differs from sir.cc in that it can compute mean and variance over
- * many runs of the same system.  Also implementation details differ,
- * with this file using the Popstate classes for printing and
- * averaging.
- *
- * Choose discrete or continuous time (Gillespie) from the command line
+ * Continuous time (Gillespie) Monte Carlo simulation of simple
+ * mean-field stochastic SIR.  This differs from sir.cc in that it can
+ * compute mean and variance over many runs of the same system.  Also
+ * implementation details differ, with this file using the Popstate
+ * classes for printing and averaging.
  *
  * This file is part of COVIDm.
  *
@@ -37,8 +35,6 @@
 #include "popstate.hh"
 #include "gillespie_sampler.hh"
 
-#undef LATTICE_MC
-
 ///////////////////////////////////////////////////////////////////////////////
 //
 // simulation options and parameters
@@ -47,7 +43,6 @@ struct opt {
   int    last_arg_read;
   
   char   *ifile;
-  bool   gillespie;
   int    Nruns;
   int    N;
   int    steps;
@@ -64,7 +59,7 @@ struct opt {
 
 } options;
 
-static int nargs=6;
+static int nargs=5;
 
 ///////////////////////////////////////////////////////////////////////////////
 //
@@ -75,11 +70,7 @@ static int nargs=6;
 
 void show_usage(char *prog)
 {
-  std::cerr << "usage: " << prog << " [G or M] parameterfile seed N steps Nruns\n\n"
-	    << "The first argument is G for Gillespie algorithm or M for discrete-time Monte Carlo\n"
-            << "Discrete-time was introduced as a fast way to do checks on new models, but in production\n"
-	    << "Gillespie should be used\n";
-
+  std::cerr << "usage: " << prog << " parameterfile seed N steps Nruns\n\n";
   exit(1);
 }
 
@@ -97,9 +88,6 @@ void read_parameters(int argc,char *argv[])
 {
   if (argc!=nargs+1) show_usage(argv[0]);
 
-  char *A;
-  read_arg(argv,A);
-  options.gillespie= (*A!='M');
   read_arg(argv,options.ifile);
   read_arg(argv,options.seed);
   read_arg(argv,options.N);
