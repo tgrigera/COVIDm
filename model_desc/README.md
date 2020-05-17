@@ -136,7 +136,7 @@ column, the constants are set to the given values.  It is necessary to
 give a line with the values at time 0, additional lines with different
 times are only given if changes are desired.
 
-Finally, as in the SEEIIR model above, the population is initialized
+As in the SEEIIR model above, the population is initialized
 to all S, so infected individuals must be introduced in order to start
 the epidemic.  The external infections are read from a two-column
 [file](./imported_infections.dat) giving time and number of imported
@@ -145,3 +145,20 @@ cases, not new cases.  At the specifed time a number of S individuals
 are forced to state <img src="/model_desc/tex/d906cd9791e4b48a3b848558acda5899.svg?invert_in_darkmode&sanitize=true" align=middle width=13.77859724999999pt height=22.465723500000017pt/> so that the total count of imported cases
 matches the number given in the file.  Both times and cases must be
 monotonically increasing.
+
+Finally, there are two possible invocations.  The first one is
+
+`seeiir_h parameterfile seed steps Nruns`
+
+The second requests some details of infected individuals at different
+levels to be written to a given file:
+
+`seeiir_h parameterfile seed steps Nruns detail_level detail_file`
+
+`detail_file` is the name of an output file, which will hold, as a
+function of time, the average number of infected individuals at each
+level (except level <img src="/model_desc/tex/ddcb483302ed36a59286424aa5e0be17.svg?invert_in_darkmode&sanitize=true" align=middle width=11.18724254999999pt height=22.465723500000017pt/> which contains the whole population which data
+is written to standard otput) and its variance.  In addition, for all
+levels from <img src="/model_desc/tex/ddcb483302ed36a59286424aa5e0be17.svg?invert_in_darkmode&sanitize=true" align=middle width=11.18724254999999pt height=22.465723500000017pt/> down to `detail_level`, the number of infected at each
+node will be written to the same file.
+
