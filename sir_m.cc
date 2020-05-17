@@ -119,72 +119,13 @@ void read_parameters(int argc,char *argv[])
 //
 // Simulation
 
-/* 
- * Version with discrete-time MC
- *
- */
-
-void run_MC(SIRstate *state)
-{
-  Uniform_real ran(0,1.);
-
-  int S=options.S0*options.N;
-  int I=options.I0*options.N;
-  int R=options.N-S-I;
-  SIRistate gstate;
-  gstate.S=(double) S/options.N;
-  gstate.I=(double) I/options.N;
-  gstate.R=(double) R/options.N;
-
-  state->push(0,gstate);
-
-#ifdef LATTICE_MC
-  short *lat=new short[options.N];
-  int n=0;
-  while (n<S) lat[n++]=0;
-  while (n<S+I) lat[n++]=1;
-  while (n<S+I+R) lat[n++]=2;
-
-  for (int t=1; t<=options.steps; ++t) {
-    for (n=0; n<options.N; n++)
-      switch(lat[n]) {
-      case 0:         // susceptible
-  	if (ran()<options.beta*fI)
-  	  { lat[n]=1; --S; ++I; }
-  	break;
-      case 1:         // infected
-  	if (ran()<options.gamma)
-  	  { lat[n]=2; --I; ++R; }
-  	break;
-      }
-
-    gstate.S=(double) S/options.N;
-    gstate.I=(double) I/options.N;
-    gstate.R=(double) R/options.N;
-    state->push(t,gstate);
-  }
-  delete[] lat;
-#else
-  for (int t=1; t<=options.steps; ++t) {
-    for (int i=0; i<S; ++i)
-      if (ran()<options.beta*I/options.N) { --S; ++I; }
-    for (int i=0; i<I; ++i)
-      if (ran()<options.gamma) { --I; ++R; }
-    gstate.S=(double) S/options.N;
-    gstate.I=(double) I/options.N;
-    gstate.R=(double) R/options.N;
-    state->push(t,gstate);
-  }
-#endif
-}
-
-
 /*
  * Version with Gillespie (kinetic MC) algorithm
  *
  */
 
-void run_gillespie(SIRstate *state)
+template <bool multipleruns>
+void run(SIRstate *state)
 {
   Uniform_real ran(0,1.);
 
@@ -192,7 +133,7 @@ void run_gillespie(SIRstate *state)
   int I=options.I0*options.N;
   int R=options.N-S-I;
 
-  Gillespie_sampler<SIRstate,SIRistate> gsamp(*state,0,options.steps,1);
+  Gillespie_sampler<SIRstate,SIRistate,multipleruns> gsamp(*state,0,options.steps,1);
 
   SIRistate gstate;
   gstate.S=(double) S/options.N;
@@ -242,28 +183,15 @@ int main(int argc,char *argv[])
   read_parameters(argc,argv);
   Random_number_generator RNG(options.seed);
 
-  SIRstate *state;
-  state = options.Nruns>1 ?
-    new SIRstate_av : new SIRstate;
-
-  // Choose algorithm
-  void (*runf)(SIRstate*);
-  runf= options.gillespie ? run_gillespie : run_MC;
-
-  std::cout << (options.gillespie ?
-    "#\n# ***** Using Gillespie algorithm *****\n" :
-		"#\n# ***** Using Monte Carlo algorithm with fixed time steps *****\n");
-  std::cout << state->header() << '\n';
+  SIRstate_av state;
+  std::cout << state.header() << '\n';
 
   // Do runs and print results
-  for (int n=0; n<options.Nruns; ++n)
-    (*runf)(state);
-
   if (options.Nruns>1)
-    std::cout << *state;
+    for (int n=0; n<options.Nruns; ++n)
+      run<true>(&state);
+  else
+    run<false>(&state);
 
-  delete state;
+  std::cout << state;
 }
-
-
-
