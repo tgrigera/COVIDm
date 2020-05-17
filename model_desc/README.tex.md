@@ -157,7 +157,7 @@ column, the constants are set to the given values.  It is necessary to
 give a line with the values at time 0, additional lines with different
 times are only given if changes are desired.
 
-Finally, as in the SEEIIR model above, the population is initialized
+As in the SEEIIR model above, the population is initialized
 to all S, so infected individuals must be introduced in order to start
 the epidemic.  The external infections are read from a two-column
 [file](./imported_infections.dat) giving time and number of imported
@@ -166,3 +166,20 @@ cases, not new cases.  At the specifed time a number of S individuals
 are forced to state $I_1$ so that the total count of imported cases
 matches the number given in the file.  Both times and cases must be
 monotonically increasing.
+
+Finally, there are two possible invocations.  The first one is
+
+`seeiir_h parameterfile seed steps Nruns`
+
+The second requests some details of infected individuals at different
+levels to be written to a given file:
+
+`seeiir_h parameterfile seed steps Nruns detail_level detail_file`
+
+`detail_file` is the name of an output file, which will hold, as a
+function of time, the average number of infected individuals at each
+level (except level $L$ which contains the whole population which data
+is written to standard otput) and its variance.  In addition, for all
+levels from $L$ down to `detail_level`, the number of infected at each
+node will be written to the same file.
+

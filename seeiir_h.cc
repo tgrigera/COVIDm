@@ -51,6 +51,7 @@
 #include "popstate.hh"
 #include "bsearch.hh"
 #include "gillespie_sampler.hh"
+#include "avevar.hh"
 
 ///////////////////////////////////////////////////////////////////////////////
 //
@@ -106,7 +107,10 @@ struct opt {
   typedef std::vector<rates_t>          rates_vs_time_t;
   rates_vs_time_t                       rates_vs_time;
 
-  opt() : last_arg_read(0) {}
+  char *dfile;        // detailed level info file
+  int  detail_level;  // print detail info down to level, negative means don't print
+
+  opt() : last_arg_read(0), detail_level(-1) {}
 
 } options;
 
@@ -117,11 +121,12 @@ struct opt {
  */
 #include "read_arg.hh"
 
-static int nargs=4;
+static int nargs=6;
 
 void show_usage(char *prog)
 {
   std::cerr << "usage: " << prog << " parameterfile seed steps Nruns\n\n"
+	    << "    or " << prog << " parameterfile seed steps Nruns detail_level detail_file\n\n"
     ;
   exit(1);
 }
@@ -141,11 +146,15 @@ void read_rates_vs_time(FILE*);
 
 void read_parameters(int argc,char *argv[])
 {
-  if (argc!=nargs+1) show_usage(argv[0]);
+  if (argc!=nargs+1 && argc!=nargs-1) show_usage(argv[0]);
   read_arg(argv,options.ifile);
   read_arg(argv,options.seed);
   read_arg(argv,options.steps);
   read_arg(argv,options.Nruns);
+  if (argc==nargs+1) {
+    read_arg(argv,options.detail_level);
+    read_arg(argv,options.dfile);
+  }
 
   FILE *f=fopen(options.ifile,"r");
   if (f==0) throw std::runtime_error(strerror(errno));
@@ -180,8 +189,9 @@ void read_parameters(int argc,char *argv[])
     }
   }
 
-
   printf("#\n# Nruns = %d\n",options.Nruns);
+  if (options.detail_level>0)
+    printf("# Writing detail down to level %d to file %s\n",options.detail_level,options.dfile);
 
   buf=readbuf(f);
   options.eifile=buf;
@@ -418,6 +428,9 @@ private:
   void update_counts(node_t l0node);
   void update_after_erase_susceptible(node_t node);
   void count_infection_kind(node_t node);
+
+  friend class SEEIIR_observer;
+
 } ;
 
 SEIRPopulation::SEIRPopulation(int levels,int (*noffspring)(int) ) :
@@ -772,6 +785,105 @@ void SEIRPopulation::add_imported(int I)
 }
 
 
+///////////////////////////////////////////////////////////////////////////////
+//
+// commputing and printing aggregate data at the different hierarchical levels
+
+class SEEIIR_observer {
+public:
+  SEEIIR_observer(SEEIIRstate *state,SEIRPopulation& pop,int dlevel,char *dfile);
+  ~SEEIIR_observer();
+
+  void push(double time,SEIRPopulation& pop);
+  
+private:
+  SEEIIRstate  *state;
+  SEEIIRistate gstate;
+  int  dlevel;
+  char *file;
+  FILE *f;
+} ;
+
+SEEIIR_observer::SEEIIR_observer(SEEIIRstate *state,SEIRPopulation& pop,int dlevel,char *dfile) :
+    state(state), dlevel(dlevel), file(dfile)
+{
+  if (dlevel<0) return;
+  f=fopen(file,"w");
+
+  int nc=1+2*(pop.levels-1);
+  for (int l=pop.levels; l>=dlevel; --l)
+    nc+=pop.level_nodes[l].size();
+
+  fprintf(f,"#     ( 1)|");
+  for (int i=2; i<=nc; ++i)
+    fprintf(f," |     (%2d)|",i);
+  fprintf(f,"\n");
+  
+  fprintf(f,"#           |------ Level %2d -----| ",pop.levels-1);
+  for (int i=pop.levels-2; i>0; --i)
+    fprintf(f,"|------ Level %2d -----| ",i);
+  for (int l=pop.levels; l>=dlevel; --l) {
+    int width=11*pop.level_nodes[l].size() + pop.level_nodes[l].size() - 1;
+    std::string fill1((width-10)/2,'-');
+    std::string fill2(width-10-fill1.size(),'-');
+    fprintf(f,"|%sLevel %2d%s| ",fill1.c_str(),l,fill2.c_str());
+  }
+  fprintf(f,"\n");
+
+  fprintf(f,"#      time ");
+  for (int i=0; i<pop.levels-1; ++i)
+    fprintf(f,"        ave         var ");
+  for (int l=pop.levels; l>=dlevel; --l)
+    for (int n=0; n<pop.level_nodes[l].size(); ++n)
+      fprintf(f,"   Node %3d ",n);
+
+  fprintf(f,"\n");
+}
+
+SEEIIR_observer::~SEEIIR_observer()
+{
+  if (dlevel>0) fclose(f);
+}
+
+void SEEIIR_observer::push(double time,SEIRPopulation& pop)
+{
+  node_data &rootd=pop.treemap[pop.root];
+  gstate.N=rootd.N;
+  gstate.S=rootd.S;
+  gstate.E1=rootd.E1;
+  gstate.E2=rootd.E2;
+  gstate.I1=rootd.I1;
+  gstate.I2=rootd.I2;
+  gstate.R=rootd.R;
+  gstate.inf_imported=pop.gdata.infections_imported;
+  gstate.inf_close=pop.gdata.infections_level[1];
+  gstate.inf_community=pop.gdata.infections_level[pop.levels];
+  gstate.beta_out=pop.rates.beta[2];
+  state->push(time,gstate);
+
+  if (dlevel<0) return;
+
+  fprintf(f,"%11.6g ",time);
+  
+  AveVar<false> av;
+  for (int l=pop.levels-1; l>0; --l) {
+    av.clear();
+    for (node_t node: pop.level_nodes[l]) {
+      node_data &noded=pop.treemap[node];
+      av.push(noded.I1+noded.I2);
+    }
+    fprintf(f,"%11.6g %11.6g ",av.ave(),av.var());
+  }
+
+  for (int l=pop.levels; l>=dlevel; --l) {
+    for (node_t node: pop.level_nodes[l]) {
+      node_data &noded=pop.treemap[node];
+      fprintf(f,"%11d ",noded.I1+noded.I2);
+    }
+  }
+
+  fprintf(f,"\n");
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 //
@@ -786,9 +898,9 @@ void run(SEIRPopulation &pop,SEEIIRstate *state)
   double last=-10;
 
   event_queue_t events=event_queue;
-  SEEIIRistate gstate;
-  Gillespie_sampler<SEEIIRstate,SEEIIRistate> gsamp(*state,0.,options.steps,1.);
-  gsamp.push_data(gstate);
+  SEEIIR_observer observer(state,pop,options.detail_level,options.dfile);
+  Gillespie_sampler<SEEIIR_observer,SEIRPopulation> gsamp(observer,0.,options.steps,1.);
+  gsamp.push_data(pop);
 
   while (time<=options.steps) {
 
@@ -825,20 +937,7 @@ void run(SEIRPopulation &pop,SEEIIRstate *state)
 	
     }
 
-    node_data &rootd=pop.treemap[pop.root];
-    gstate.N=rootd.N;
-    gstate.S=rootd.S;
-    gstate.E1=rootd.E1;
-    gstate.E2=rootd.E2;
-    gstate.I1=rootd.I1;
-    gstate.I2=rootd.I2;
-    gstate.R=rootd.R;
-    gstate.inf_imported=pop.gdata.infections_imported;
-    gstate.inf_close=pop.gdata.infections_level[1];
-    gstate.inf_community=pop.gdata.infections_level[pop.levels];
-    gstate.beta_out=pop.rates.beta[2];
-
-    gsamp.push_time(time);
+    gsamp.push_data(pop);
 
   }
 } 

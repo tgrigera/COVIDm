@@ -19,13 +19,18 @@ described [[./model_desc/README.md][here]]):
   - sir_f :: A SIR with population divided in families, and different
     in- and out-of-family transmission rates.
 
-  - seeiir_i1, seeiir_i2, seeiir_i3 :: Three implementations of a
-    SEEIIR model, with population divided in families.
+  - seeiir_i3 :: A SEEIIR model, with population divided in families.
+    =seeiir_i1= and =seeiir_i2= are two simpler (and slower)
+    implementations of the same model, but are deprecated and should
+    not be used.  Although it has been checked that the three versions
+    give the same results for the evolution of each epidemiological
+    state, there may be bugs in the counting of infection kind (close
+    contact, community) in implementations 1 and 2.
 
   - seeiir_h ::  Hierarchical SEEIIR (individuals are grouped in
     families, families in neighborhoods, etc).  ~seeiir_h_nol~ is an
     alternative implementation without use of the LEMON library, but
-    is somewhat slower.
+    is somewhat slower.  It should not be used.
 
 All models mentioned are implemented in their stochastic variants.
 The programs read a few arguments from the command line, and the model
