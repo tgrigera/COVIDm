@@ -34,6 +34,10 @@
 // Template parameters are Pusher (a class with a method push(double
 // time,Data &data) that does the output or average, and Data, the
 // class/struct that the Pusher class expects to receive the data.
+// The third template parameter is a boolean, which controls whether
+// the class actually performs the sampling.  If true (default), it
+// semples as described above, if false it simply passes everything
+// through to the pusher.
 //
 // Usage: create a Gillespie_sampler object giving the pusher, start
 // time, end time and desired incremet.  Then there are two methods to
@@ -67,7 +71,7 @@
 // }
 
 
-template <typename Pusher,typename Data>
+template <typename Pusher,typename Data,bool sample=true>
 class Gillespie_sampler {
 public:
   Gillespie_sampler(Pusher& pusher,double t0,double tmax,double deltat);
@@ -81,8 +85,8 @@ private:
   Data*  data;
 } ;
 
-template <typename Pusher,typename Data>
-Gillespie_sampler<Pusher,Data>::Gillespie_sampler(Pusher& pusher,double t0,double tmax,double deltat) :
+template <typename Pusher,typename Data,bool sample>
+Gillespie_sampler<Pusher,Data,sample>::Gillespie_sampler(Pusher& pusher,double t0,double tmax,double deltat) :
   pusher(pusher),
   t0(t0),
   deltat(deltat),
@@ -93,15 +97,20 @@ Gillespie_sampler<Pusher,Data>::Gillespie_sampler(Pusher& pusher,double t0,doubl
 {
 }
 
-template <typename Pusher,typename Data>
-void Gillespie_sampler<Pusher,Data>::push_time(double time)
+template <typename Pusher,typename Data,bool sample>
+void Gillespie_sampler<Pusher,Data,sample>::push_time(double time)
 {
-  if (time<=tnext || tlast>=tmax) return;
-  double t;
-  for (t=tlast+=deltat; t<time && t<=tmax; t+=deltat) 
-    pusher.push(t,*data);
-  tnext=t;
-  tlast=t-deltat;
+  if (sample) {
+    if (time<=tnext || tlast>=tmax) return;
+    double t;
+    for (t=tlast+=deltat; t<time && t<=tmax; t+=deltat) 
+      pusher.push(t,*data);
+    tnext=t;
+    tlast=t-deltat;
+  } else {
+    if (time<=tmax)
+      pusher.push(time,*data);
+  }
 }
 
 #endif /* GILLESPIE_SAMPLER_HH */
