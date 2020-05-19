@@ -52,7 +52,7 @@ the [[./model_desc][model_desc]] directory:
  - [[./model_desc/sir_par.dat][sir_par.dat]] :: for =sir= and =sir_m=
  - [[./model_desc/sir_par.dat][sir_f_par.dat]] :: for =sir_f=
  - [[./model_desc/seeiir_par.dat][seeiir_par.dat]] :: for =seeiir_i1=, =seeiir_i2= and =seeiir_i3=
- - [[file:model_desc/seeiir_h_par.dat::# Nlevels][seeiir_h_par.dat]] :: for =seeiir_h= and =seeir_h_nol=
+ - [[file:./model_desc/seeiir_h_par.dat][seeiir_h_par.dat]] :: for =seeiir_h= and =seeir_h_nol=
 
 For the meaning of the parameters, see the [[./model_desc/README.md][model description]].
 
