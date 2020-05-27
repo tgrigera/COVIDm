@@ -40,5 +40,5 @@ dnl AS_IF([test -z $HAVE_LEMON],AC_MSG_FAILURE([cannot build without liblemon]))
 
 
 # Generate Makefile
-AC_CONFIG_FILES([Makefile])
+AC_CONFIG_FILES([Makefile graph/Makefile])
 AC_OUTPUT

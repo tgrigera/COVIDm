@@ -5,7 +5,10 @@
 #
 
 
-bin_PROGRAMS = sir sir_m sir_f seeiir_i1 seeiir_i2 seeiir_i3 seeiir_h seeiir_h_nol
+SUBDIRS = . graph
+
+bin_PROGRAMS = sir sir_m sir_f seeiir_i1 seeiir_i2 seeiir_i3 seeiir_h	\
+seeiir_h_nol
 
 sir_SOURCES = sir.cc qdrandom.cc
 
