@@ -21,6 +21,7 @@
 #ifndef SEIR_COLLECTOR_HH
 #define SEIR_COLLECTOR_HH
 
+#include "../geoave.hh"
 #include "esampler.hh"
 #include "sirmodel.hh"
 
@@ -84,24 +85,76 @@ void SIRcollector<IGraph>::collect(double time_)
   std::cout << *this << '\n';
 }
 
-// class SIRcollector_av : public SIRcollector {
-// public:
-//   SIRstate_av(double deltat=1.) :
-//     SIRstate(),
-//     Sav(-0.5*deltat,1.,deltat),
-//     Iav(-0.5*deltat,1.,deltat),
-//     Rav(-0.5*deltat,1.,deltat)
-//   {}
+///////////////////////////////////////////////////////////////////////////////
+//
+// SIRcollector_av
 
-//   const char* header();
-//   void print(std::ostream&,bool print_time=true);
-//   void push(double time,SIRistate &istate);
+template <typename IGraph>
+class SIRcollector_av : public SIRcollector<IGraph> {
+public:
+  SIRcollector_av(SIR_model<IGraph> &model,double deltat=1.) :
+    SIRcollector<IGraph>(model),
+    Sav(-0.5*deltat,1.,deltat),
+    Iav(-0.5*deltat,1.,deltat),
+    Rav(-0.5*deltat,1.,deltat)
+  {}
 
-// private:
-//   Geoave Sav,Iav,Rav;
+  const char* header();
+  void print(std::ostream&,bool print_time=true);
+  void collect(double time);
 
-// } ;
+private:
+  Geoave Sav,Iav,Rav;
+  using SEIRcollector_base::hdr;
+  using SEIRcollector_base::time;
+  using SEIRcollector_base::S;
+  using SEIRcollector_base::I;
+  using SEIRcollector_base::R;
+  using SEIRcollector_base::addSIRhdr;
+  using SIRcollector<IGraph>::model;
+} ;
 
+template <typename IGraph>
+const char *SIRcollector_av<IGraph>::header()
+{
+  hdr.clear();
+  hdr="#           |----------- Average -------------| |------------ Variance -----------|\n";
+  hdr+="#      time ";
+  addSIRhdr();
+  hdr+=" ";
+  addSIRhdr();
+  return hdr.c_str();
+}  
+
+template <typename IGraph>
+void SIRcollector_av<IGraph>::collect(double time)
+{
+  Sav.push(time,model.NS);
+  Iav.push(time,model.NI);
+  Rav.push(time,model.NR);
+}
+
+template <typename IGraph>
+void SIRcollector_av<IGraph>::print(std::ostream& o,bool print_time)
+{
+  std::vector<double> tim,Sa,Sv,Ia,Iv,Ra,Rv;
+  Sav.get_aves(tim,Sa,Sv);
+  Iav.get_aves(tim,Ia,Iv);
+  Rav.get_aves(tim,Ra,Rv);
+
+  for (int i=0; i<Sv.size(); ++i) {
+    time=tim[i];
+    S[0]=Sa[i];
+    I[0]=Ia[i];
+    R[0]=Ra[i];
+    SEIRcollector_base::print(o,print_time);
+    S[0]=Sv[i];
+    I[0]=Iv[i];
+    R[0]=Rv[i];
+    SEIRcollector_base::print(o,false);
+    o << '\n';
+  }
+}
 
 
 #endif /* SEIR_COLLECTOR_HH */

@@ -36,6 +36,7 @@ template<typename IGraph>
 class SIR_model : public Epidemiological_model_graph_base<IGraph> {
 public:
   SIR_model(IGraph&);
+  void set_all_susceptible();
   void apply_transition(int);
   void compute_rates(typename IGraph::graph_t::Node);
   void add_imported_infections(Imported_infection*);
@@ -62,14 +63,23 @@ SIR_model<IGraph>::SIR_model(IGraph& igraph) :
   Epidemiological_model_graph_base<IGraph>(igraph),
   inodemap(igraph.graph),
   NS(igraph.node_count),
-  NI(0)
+  NI(0),
+  NR(0)
 {
   transitions.clear();
   for (typename IGraph::graph_t::NodeIt inode(igraph.graph); inode!=lemon::INVALID; ++inode) {
+    inodemap[inode].state=SIR_node::S;
     inodemap[inode].itransition=transitions.size();
     Epidemiological_model::transition tr={igraph.id(inode),0,0};
     transitions.push_back(tr);
   }
+}
+
+template<typename IGraph>
+void SIR_model<IGraph>::set_all_susceptible()
+{
+  for (typename IGraph::graph_t::NodeIt inode(igraph.graph); inode!=lemon::INVALID; ++inode)
+    inodemap[inode].state=SIR_node::S;
 }
 
 template<typename IGraph>
@@ -83,7 +93,7 @@ void SIR_model<IGraph>::compute_rates(typename IGraph::graph_t::Node node)
     w=0;
     for (typename IGraph::graph_t::OutArcIt arc(igraph.graph,node); arc!=lemon::INVALID; ++arc) {
       auto tnode=inodemap[igraph.graph.target(arc)];
-      if (tnode.state==SIR_node::S) w+=igraph.arc_weights[arc];
+      if (tnode.state==SIR_node::I) w+=igraph.arc_weight[arc];
     }
     rate=beta*w;
     break;

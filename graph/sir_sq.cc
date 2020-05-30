@@ -93,6 +93,7 @@ void read_parameters(int argc,char *argv[])
   printf("# gamma = %g\n",options.gamma);
   printf("# Lx, Ly = %d, %d\n",options.Lx,options.Ly);
   printf("# I0 = %d\n",options.I0);
+  printf("# Number of runs = %d\n",options.Nruns);
 }
 
 
@@ -101,17 +102,33 @@ int main(int argc,char* argv[])
   read_parameters(argc,argv);
   Random_number_generator RNG(options.seed);
 
-  SQGraph igraph(options.Lx,options.Ly);
-  SIR_model<SQGraph> SIR(igraph);
+#ifdef DEBUG_FCGRAPH
+  FCGraph* igraph = FCGraph::create(options.Lx*options.Ly);
+  SIR_model<FCGraph> SIR(*igraph);
+  SIRcollector_av<FCGraph> collector(SIR);
+  //SIRcollector<FCGraph> collector(SIR);
+#else
+  // SQGraph igraph(options.Lx,options.Ly);
+  // SIR_model<SQGraph> SIR(igraph);
+  //SIRcollector<SQGraph> collector(SIR);
+#endif
   SIR.set_beta(options.beta);
   SIR.set_gamma(options.gamma);
 
-  SIRcollector<SQGraph> collector(SIR);
-  Gillespie_sampler sampler(0,options.steps,1.,&collector);
+  Sampler *sampler;
+  if (options.Nruns>1) 
+    sampler=new Gillespie_sampler(0,options.steps,1.,&collector);
+  else
+    sampler=new Passthrough_sampler(options.steps,&collector);
 
   event_queue_t events;
   events.push(new Imported_infection(1,options.I0));
 
-  run(&SIR,&sampler,events,options.steps);
+  std::cout << collector.header() << '\n';
+  for (int n=0; n<options.Nruns; ++n) {
+    run(&SIR,sampler,events,options.steps);
+  }
+  std::cout << collector;
 
+  delete sampler;
 }

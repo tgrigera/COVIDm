@@ -57,6 +57,7 @@ void run(Epidemiological_model *model,Sampler* sampler,event_queue_t& events,dou
   levents.push(new Event(std::numeric_limits<double>::max()));
   sampler->sample(0.);
 
+  model->set_all_susceptible();
   model->compute_all_rates();
   while (time<=tmax) {
 
