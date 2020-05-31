@@ -115,20 +115,17 @@ int main(int argc,char* argv[])
   SIR.set_beta(options.beta);
   SIR.set_gamma(options.gamma);
 
-  Sampler *sampler;
-  if (options.Nruns>1) 
-    sampler=new Gillespie_sampler(0,options.steps,1.,&collector);
-  else
-    sampler=new Passthrough_sampler(options.steps,&collector);
-
   event_queue_t events;
   events.push(new Imported_infection(1,options.I0));
 
   std::cout << collector.header() << '\n';
   for (int n=0; n<options.Nruns; ++n) {
+    Sampler *sampler = options.Nruns>1 ?
+      static_cast<Sampler*>( new Gillespie_sampler(0,options.steps,1.,&collector)  ) :
+      new Passthrough_sampler(0,options.steps,&collector) ;
     run(&SIR,sampler,events,options.steps);
+    delete sampler;
   }
   std::cout << collector;
 
-  delete sampler;
 }

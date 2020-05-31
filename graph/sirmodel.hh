@@ -80,6 +80,8 @@ void SIR_model<IGraph>::set_all_susceptible()
 {
   for (typename IGraph::graph_t::NodeIt inode(igraph.graph); inode!=lemon::INVALID; ++inode)
     inodemap[inode].state=SIR_node::S;
+  NS=igraph.node_count;
+  NI=NR=0;
 }
 
 template<typename IGraph>

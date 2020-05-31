@@ -61,22 +61,26 @@ inline Sampler::Sampler(Collector *collector) :
 
 class Passthrough_sampler : public Sampler {
 public:
-  Passthrough_sampler(double tmax,Collector *collector);
+  Passthrough_sampler(double t0,double tmax,Collector *collector);
   void sample(double time);
 
 private:
+  double tprev;
   double tmax;
 
 } ;
 
-inline Passthrough_sampler::Passthrough_sampler(double tmax,Collector *collector) :
-  Sampler(collector), tmax(tmax)
+inline Passthrough_sampler::Passthrough_sampler(double t0,double tmax,Collector *collector) :
+  Sampler(collector),
+  tprev(t0),
+  tmax(tmax)
 {}
 
 inline void Passthrough_sampler::sample(double time)
 {
   if (time<=tmax)
-    collector->collect(time);
+    collector->collect(tprev);
+  tprev=time;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
