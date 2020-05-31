@@ -106,11 +106,10 @@ int main(int argc,char* argv[])
   FCGraph* igraph = FCGraph::create(options.Lx*options.Ly);
   SIR_model<FCGraph> SIR(*igraph);
   SIRcollector_av<FCGraph> collector(SIR);
-  //SIRcollector<FCGraph> collector(SIR);
 #else
-  // SQGraph igraph(options.Lx,options.Ly);
-  // SIR_model<SQGraph> SIR(igraph);
-  //SIRcollector<SQGraph> collector(SIR);
+  SQGraph* igraph = SQGraph::create(options.Lx,options.Ly);
+  SIR_model<SQGraph> SIR(*igraph);
+  SIRcollector_av<SQGraph> collector(SIR);
 #endif
   SIR.set_beta(options.beta);
   SIR.set_gamma(options.gamma);

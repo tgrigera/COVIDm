@@ -95,7 +95,7 @@ void SIR_model<IGraph>::compute_rates(typename IGraph::graph_t::Node node)
     w=0;
     for (typename IGraph::graph_t::OutArcIt arc(igraph.graph,node); arc!=lemon::INVALID; ++arc) {
       auto tnode=inodemap[igraph.graph.target(arc)];
-      if (tnode.state==SIR_node::I) w+=igraph.arc_weight[arc];
+      if (tnode.state==SIR_node::I) w+=igraph.arc_weight(arc);
     }
     rate=beta*w;
     break;

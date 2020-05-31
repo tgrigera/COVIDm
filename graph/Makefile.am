@@ -4,7 +4,7 @@
 # COVIDm is copyright (c) 2020 by the authors (see AUTHORS)
 #
 
-bin_PROGRAMS = sir_fc # sir_sq
+bin_PROGRAMS = sir_fc sir_sq
 
 sir_sq_SOURCES = sir_sq.cc emodel.cc seir_collector.cc ../qdrandom.cc ../geoave.cc
 

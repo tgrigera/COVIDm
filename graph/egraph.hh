@@ -38,34 +38,45 @@ class Graph_base {
 public:
   typedef          Graph graph_t;
   typedef typename Graph::Node  node_t;
+  typedef typename graph_t::Arc arc_t;
 
-  graph_t                 &graph;
-  typename graph_t::template ArcMap<double> arc_weight;
-  int                     node_count;
+  graph_t &graph;
+  double  arc_weight(arc_t arc);
+  node_t  node(int id);
+  node_t  random_node();
+  int     id(typename graph_t::Node);
 
-  node_t node(int id);
-  node_t random_node();
-  int    id(typename graph_t::Node);
+  int     node_count;
 
 protected:
   Graph_base(Graph* graphp,double default_arc_weight=1.);
   ~Graph_base() {delete graphp;}
-  lemon::IdMap<graph_t,typename graph_t::Node>     idmap;
-  lemon::RangeIdMap<graph_t,typename graph_t::Node>  rangemap;
 
-  graph_t         *graphp;
-  Uniform_integer ran;
+  graph_t                                           *graphp;
+  lemon::IdMap<graph_t,typename graph_t::Node>      idmap;
+  lemon::RangeIdMap<graph_t,typename graph_t::Node> rangemap;
+  Uniform_integer                                   ran;
+  double                                            default_arc_weight;
+  typename graph_t::template ArcMap<double>         arcmap;
+
 } ;
 
 template <typename Graph>
 Graph_base<Graph>::Graph_base(Graph* graphp,double default_arc_weight) :
-  graphp(graphp),
   graph(*graphp),
-  arc_weight(graph,default_arc_weight),
+  graphp(graphp),
   idmap(graph),
-  rangemap(graph)
+  rangemap(graph),
+  default_arc_weight(default_arc_weight),
+  arcmap(graph,default_arc_weight)
 {
   node_count=lemon::countNodes(graph);
+}
+
+template <typename Graph>
+inline double Graph_base<Graph>::arc_weight(Graph_base<Graph>::arc_t arc)
+{
+  return arcmap[arc];
 }
 
 template <typename Graph>
@@ -93,7 +104,6 @@ inline typename Graph_base<Graph>::node_t Graph_base<Graph>::random_node()
 
 class FCGraph : public Graph_base<lemon::FullGraph>  { 
 public:
-
   static FCGraph* create(int N);
 
 private:
@@ -109,40 +119,28 @@ inline FCGraph* FCGraph::create(int N)
   graph_t *g = new graph_t(N);
   return new FCGraph(g,1./N);
 }
-  
 
-// class SQGraph {
-// public:
-//   typedef lemon::GridGraph graph_t;
-//   typedef lemon::GridGraph::Node  node_t;
+///////////////////////////////////////////////////////////////////////////////
+//
+// Square Lattice
 
-//   SQGraph(int Lx,int Ly);
-//   node_t node(int id);
-//   node_t random_node();
-//   int   id(graph_t::Node);
-  
-//   graph_t                  graph;
-//   graph_t::ArcMap<double>  arc_weight;
+class SQGraph : public Graph_base<lemon::GridGraph> {
+public:
+  static SQGraph* create(int Lx,int Ly);
 
-//   int node_count;
+private:
+  SQGraph(graph_t *g,double def_arc_w);
 
-// private:
-//   lemon::IdMap<graph_t,graph_t::Node>     idmap;
-//   lemon::RangeIdMap<graph_t,graph_t::Node>  rangemap;
+} ;
 
-//   Uniform_integer ran;
-// } ;
+inline SQGraph::SQGraph(graph_t* g,double aw) :
+  Graph_base<lemon::GridGraph>(g,aw)
+{}
 
-// inline SQGraph::SQGraph(int Lx,int Ly) :
-//   graph(Lx,Ly),
-//   arc_weights(graph,1.),
-//   idmap(graph),
-//   rangemap(graph)
-// {
-//   node_count=lemon::countNodes(graph);
-// }
-
-// }
-
+inline SQGraph* SQGraph::create(int Lx,int Ly)
+{
+  graph_t* g=new graph_t(Lx,Ly);
+  return new SQGraph(g,1.);
+}
 
 #endif /* EGRAPH_HH */
