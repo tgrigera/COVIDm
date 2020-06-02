@@ -25,6 +25,8 @@
 #ifndef SIRMODEL_HH
 #define SIRMODEL_HH
 
+#include <assert.h>
+
 #include "emodel.hh"
 #include "egraph.hh"
 
@@ -32,13 +34,13 @@
 //
 // SIR model
 
-template<typename IGraph>
-class SIR_model : public Epidemiological_model_graph_base<IGraph> {
+template<typename EGraph>
+class SIR_model : public Epidemiological_model_graph_base<EGraph> {
 public:
-  SIR_model(IGraph&);
+  SIR_model(EGraph&);
   void set_all_susceptible();
   void apply_transition(int);
-  void compute_rates(typename IGraph::graph_t::Node);
+  void compute_rates(typename EGraph::igraph_t::Node);
   void add_imported_infections(Imported_infection*);
   void set_beta(double b) {beta=b;}
   void set_gamma(double g) {gamma=g;}
@@ -48,44 +50,85 @@ public:
     int  itransition;
   } ;
 
-  int NS,NI,NR;
+  struct aggregate_node {
+    int  NS,NI,NR;
+  } ;
+
+  typename EGraph::node_t   hroot;
+  typename EGraph::hgraph_t::template NodeMap<aggregate_node*> anodemap;
+  
 
 private:
   double beta,gamma;
 
-  typename IGraph::graph_t::template NodeMap<SIR_node> inodemap;
-  using Epidemiological_model_graph_base<IGraph>::igraph;
-  using Epidemiological_model_graph_base<IGraph>::transitions;
+  typename EGraph::igraph_t::template NodeMap<SIR_node> inodemap;
+  using Epidemiological_model_graph_base<EGraph>::egraph;
+  using Epidemiological_model_graph_base<EGraph>::transitions;
+
+  void recompute_counts(typename EGraph::node_t);
 } ;
 
-template<typename IGraph>
-SIR_model<IGraph>::SIR_model(IGraph& igraph) :
-  Epidemiological_model_graph_base<IGraph>(igraph),
-  inodemap(igraph.graph),
-  NS(igraph.node_count),
-  NI(0),
-  NR(0)
+template<typename EGraph>
+SIR_model<EGraph>::SIR_model(EGraph& egraph) :
+  Epidemiological_model_graph_base<EGraph>(egraph),
+  hroot(egraph.hroot),
+  anodemap(egraph.hgraph,0),
+  inodemap(egraph.igraph)
 {
   transitions.clear();
-  for (typename IGraph::graph_t::NodeIt inode(igraph.graph); inode!=lemon::INVALID; ++inode) {
+  for (typename EGraph::igraph_t::NodeIt inode(egraph.igraph); inode!=lemon::INVALID; ++inode) {
     inodemap[inode].state=SIR_node::S;
     inodemap[inode].itransition=transitions.size();
-    Epidemiological_model::transition tr={igraph.id(inode),0,0};
+    Epidemiological_model::transition tr={egraph.id(inode),0,0};
     transitions.push_back(tr);
   }
 }
 
-template<typename IGraph>
-void SIR_model<IGraph>::set_all_susceptible()
+template<typename EGraph>
+void SIR_model<EGraph>::set_all_susceptible()
 {
-  for (typename IGraph::graph_t::NodeIt inode(igraph.graph); inode!=lemon::INVALID; ++inode)
+  for (typename EGraph::igraph_t::NodeIt inode(egraph.igraph); inode!=lemon::INVALID; ++inode) {
     inodemap[inode].state=SIR_node::S;
-  NS=igraph.node_count;
-  NI=NR=0;
+  }
+  recompute_counts(egraph.hroot);
+
+  assert(anodemap[hroot]->NS==egraph.inode_count);
 }
 
-template<typename IGraph>
-void SIR_model<IGraph>::compute_rates(typename IGraph::graph_t::Node node)
+template<typename EGraph>
+void SIR_model<EGraph>::recompute_counts(typename EGraph::node_t lroot)
+{
+  aggregate_node* anode=anodemap[lroot];
+  if (anode==0) {
+    anode=new aggregate_node;
+    anodemap[lroot]=anode;
+  }
+  anode->NS=anode->NI=anode->NR=0;
+  for (typename EGraph::hgraph_t::OutArcIt arc(egraph.hgraph,lroot); arc!=lemon::INVALID; ++arc) {
+    auto lnode=egraph.hgraph.target(arc);
+    if (countOutArcs(egraph.hgraph,lnode)>0) {
+      recompute_counts(lnode);
+      anode->NS+=anodemap[lnode]->NS;
+      anode->NI+=anodemap[lnode]->NI;
+      anode->NR+=anodemap[lnode]->NR;
+    } else {
+      switch(inodemap[lnode].state) {
+      case SIR_node::S:
+	anode->NS++;
+	break;
+      case SIR_node::I:
+	anode->NI++;
+	break;
+      case SIR_node::R:
+	anode->NR++;
+	break;
+      }
+    }
+  }
+}
+
+template<typename EGraph>
+void SIR_model<EGraph>::compute_rates(typename EGraph::igraph_t::Node node)
 {
   auto &noded=inodemap[node];
   double w,rate;
@@ -93,9 +136,9 @@ void SIR_model<IGraph>::compute_rates(typename IGraph::graph_t::Node node)
   switch(noded.state) {
   case SIR_node::S:
     w=0;
-    for (typename IGraph::graph_t::OutArcIt arc(igraph.graph,node); arc!=lemon::INVALID; ++arc) {
-      auto tnode=inodemap[igraph.graph.target(arc)];
-      if (tnode.state==SIR_node::I) w+=igraph.arc_weight(arc);
+    for (typename EGraph::igraph_t::OutArcIt arc(egraph.igraph,node); arc!=lemon::INVALID; ++arc) {
+      auto tnode=inodemap[egraph.igraph.target(arc)];
+      if (tnode.state==SIR_node::I) w+=egraph.arc_weight(arc);
     }
     rate=beta*w;
     break;
@@ -110,22 +153,24 @@ void SIR_model<IGraph>::compute_rates(typename IGraph::graph_t::Node node)
   transitions[noded.itransition].rate=rate;
 }
 
-template<typename IGraph>
-void SIR_model<IGraph>::apply_transition(int itran)
+template<typename EGraph>
+void SIR_model<EGraph>::apply_transition(int itran)
 {
-  auto node=igraph.node(transitions[itran].nodeid);
+  auto node=egraph.inode(transitions[itran].nodeid);
   auto &noded=inodemap[node];
   switch(noded.state) {
   case SIR_node::S:
     noded.state=SIR_node::I;
-    NS--;
-    NI++;
+    egraph.for_each_anode(node,
+			  [this](typename EGraph::node_t hnode) ->void
+			  {aggregate_node* anode=this->anodemap[hnode]; anode->NS--; anode->NI++;}    );
     break;
 
   case SIR_node::I:
     noded.state=SIR_node::R;
-    NI--;
-    NR++;
+    egraph.for_each_anode(node,
+		   [this](typename EGraph::node_t hnode)
+		   {aggregate_node* anode=this->anodemap[hnode]; anode->NI--; anode->NR++;}    );
     break;
 
   case SIR_node::R:
@@ -136,23 +181,24 @@ void SIR_model<IGraph>::apply_transition(int itran)
   }
 
   compute_rates(node);
-  for (typename IGraph::graph_t::InArcIt arc(igraph.graph,node); arc!=lemon::INVALID; ++arc)
-    compute_rates(igraph.graph.source(arc));
+  for (typename EGraph::igraph_t::InArcIt arc(egraph.igraph,node); arc!=lemon::INVALID; ++arc)
+    compute_rates(egraph.igraph.source(arc));
 }
 
-template<typename IGraph>
-void SIR_model<IGraph>::add_imported_infections(Imported_infection* ii)
+template<typename EGraph>
+void SIR_model<EGraph>::add_imported_infections(Imported_infection* ii)
 {
-  typename IGraph::graph_t::Node node;
+  typename EGraph::igraph_t::Node node;
 
   for (int i=0; i<ii->new_cases; ++i) {
-    do node=igraph.random_node(); while(inodemap[node].state!=SIR_node::S);
+    do node=egraph.random_inode(); while(inodemap[node].state!=SIR_node::S);
     inodemap[node].state=SIR_node::I;
-    NS--;
-    NI++;
+    egraph.for_each_anode(node,
+		   [this](typename EGraph::node_t hnode)
+		   {aggregate_node* anode=this->anodemap[hnode]; anode->NS--; anode->NI++;}    );
     compute_rates(node);
-    for (typename IGraph::graph_t::InArcIt arc(igraph.graph,node); arc!=lemon::INVALID; ++arc)
-      compute_rates(igraph.graph.source(arc));
+    for (typename EGraph::igraph_t::InArcIt arc(egraph.igraph,node); arc!=lemon::INVALID; ++arc)
+      compute_rates(egraph.igraph.source(arc));
   }
 }
 

@@ -29,118 +29,175 @@
 
 #include <lemon/full_graph.h>
 #include <lemon/grid_graph.h>
+#include <lemon/list_graph.h>
+#include <lemon/smart_graph.h>
 #include <lemon/maps.h>
+#include <lemon/adaptors.h>
 
 #include "../qdrandom.hh"
 
-template <typename Graph>
+//typedef lemon::ListDigraph digraph_t;
+typedef lemon::SmartDigraph digraph_t;
+
+///////////////////////////////////////////////////////////////////////////////
+//
+// Graph_base
+//
+// Base class for all epidemiological graphs
+//
+// Provides two graphs to the model-implementing classes:
+//
+//   - igraph: A graph which includes only nodes representing individuals,
+//             and (weighted) links (bidirectional arcs) among them representing
+//             their interaction.
+//
+//   - hgraph: A hierarchical graph which includes all nodes (individual and
+//             aggreate) but with only (directed) arcs representing the aggregation
+//             hierarchy.  No arcs between individual nodes.
+//
+//   - fgraph: The full graph from which the other two are obtained through filtering
+
 class Graph_base {
 public:
-  typedef          Graph graph_t;
-  typedef typename Graph::Node  node_t;
-  typedef typename graph_t::Arc arc_t;
+  typedef digraph_t                     fgraph_t;
+  typedef lemon::FilterArcs<digraph_t>  hgraph_t;
+  typedef lemon::FilterNodes<digraph_t> igraph_t;
+  typedef typename fgraph_t::Node       node_t;
+  typedef typename fgraph_t::Arc        arc_t;
 
-  graph_t &graph;
-  double  arc_weight(arc_t arc);
-  node_t  node(int id);
-  node_t  random_node();
-  int     id(typename graph_t::Node);
+  igraph_t &igraph;               
+  hgraph_t &hgraph;
+  double   arc_weight(arc_t arc);
+  node_t   inode(int id);
+  node_t   random_inode();
+  int      id(node_t);
 
-  int     node_count;
+  template <typename Fun>
+  void     for_each_anode(node_t,Fun fun);
+
+  node_t   hroot;
+  int      inode_count;
 
 protected:
-  Graph_base(Graph* graphp,double default_arc_weight=1.);
-  ~Graph_base() {delete graphp;}
+  Graph_base(fgraph_t* fgraphp,igraph_t* igraphp,hgraph_t* hgraphp,
+	     node_t hroot,double default_arc_weight=1.);
+  ~Graph_base();
 
-  graph_t                                           *graphp;
-  lemon::IdMap<graph_t,typename graph_t::Node>      idmap;
-  lemon::RangeIdMap<graph_t,typename graph_t::Node> rangemap;
-  Uniform_integer                                   ran;
-  double                                            default_arc_weight;
-  typename graph_t::template ArcMap<double>         arcmap;
+  fgraph_t                                           *fgraphp;
+  igraph_t                                           *igraphp;
+  hgraph_t                                           *hgraphp;
+  fgraph_t                                           &fgraph;
+  lemon::IdMap<igraph_t,igraph_t::Node>     idmap;
+  lemon::RangeIdMap<igraph_t,igraph_t::Node> rangemap;
+  Uniform_integer                                    ran;
+  double                                             default_arc_weight;
+  typename igraph_t::template ArcMap<double>         arcmap;
 
 } ;
 
-template <typename Graph>
-Graph_base<Graph>::Graph_base(Graph* graphp,double default_arc_weight) :
-  graph(*graphp),
-  graphp(graphp),
-  idmap(graph),
-  rangemap(graph),
+inline Graph_base::Graph_base(fgraph_t* fgraphp,igraph_t* igraphp,hgraph_t* hgraphp,
+			      node_t hroot,double default_arc_weight) :
+  fgraphp(fgraphp), igraphp(igraphp), hgraphp(hgraphp),
+  fgraph(*fgraphp), igraph(*igraphp), hgraph(*hgraphp),
+  hroot(hroot),
+  idmap(igraph),
+  rangemap(igraph),
   default_arc_weight(default_arc_weight),
-  arcmap(graph,default_arc_weight)
+  arcmap(igraph,default_arc_weight)
 {
-  node_count=lemon::countNodes(graph);
+  inode_count=lemon::countNodes(igraph);
 }
 
-template <typename Graph>
-inline double Graph_base<Graph>::arc_weight(Graph_base<Graph>::arc_t arc)
+inline Graph_base::~Graph_base()
+{
+  delete fgraphp;
+  delete igraphp;
+  delete hgraphp;
+}
+
+inline double Graph_base::arc_weight(Graph_base::arc_t arc)
 {
   return arcmap[arc];
 }
 
-template <typename Graph>
-inline typename Graph_base<Graph>::node_t Graph_base<Graph>::node(int id)
+inline Graph_base::node_t Graph_base::inode(int id)
 {
   return idmap(id);
 }
 
-template <typename Graph>
-inline int Graph_base<Graph>::id(Graph_base<Graph>::node_t node)
+inline int Graph_base::id(Graph_base::node_t node)
 {
   return idmap[node];
 }
 
-template <typename Graph>
-inline typename Graph_base<Graph>::node_t Graph_base<Graph>::random_node()
+inline Graph_base::node_t Graph_base::random_inode()
 {
   return rangemap(ran(rangemap.size()));
 }
 
+template <typename Fun>
+void Graph_base::for_each_anode(node_t inode,Fun fun)
+{
+  hgraph_t::InArcIt arc(hgraph,inode);
+  while ( (arc = hgraph_t::InArcIt(hgraph,inode) ) != lemon::INVALID ) {
+    inode = hgraph.source(arc);
+    fun(inode);
+  }    
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 //
 // Fully-connected graph
 
-class FCGraph : public Graph_base<lemon::FullGraph>  { 
+class FCGraph : public Graph_base  { 
 public:
   static FCGraph* create(int N);
+  ~FCGraph();
 
 private:
-  FCGraph(graph_t* g,double def_arc_w);
+  FCGraph(fgraph_t* fg,igraph_t* ig,hgraph_t *hg,node_t hroot,double def_arc_w,
+	  fgraph_t::ArcMap<bool> *hmap, fgraph_t::NodeMap<bool> *imap);
+
+  fgraph_t::ArcMap<bool>  *hmap;   // hierarchical graph has same nodes, less arcs
+  fgraph_t::NodeMap<bool> *imap;  // individual graph has only the individual nodes
+  
 } ;
 
-inline FCGraph::FCGraph(graph_t* g,double aw) :
-  Graph_base<lemon::FullGraph>(g,aw)
+inline FCGraph::FCGraph(fgraph_t* fg,igraph_t* ig,hgraph_t *hg,
+			node_t hroot, double def_arc_w,
+			fgraph_t::ArcMap<bool> *hmap,
+			fgraph_t::NodeMap<bool> *imap) :
+  Graph_base(fg,ig,hg,hroot,def_arc_w),
+  hmap(hmap), imap(imap)
 {}
 
-inline FCGraph* FCGraph::create(int N)
+inline FCGraph::~FCGraph()
 {
-  graph_t *g = new graph_t(N);
-  return new FCGraph(g,1./N);
+  delete hmap;
+  delete imap;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 //
 // Square Lattice
 
-class SQGraph : public Graph_base<lemon::GridGraph> {
+class SQGraph : public Graph_base {
 public:
   static SQGraph* create(int Lx,int Ly);
+  ~SQGraph();
 
 private:
-  SQGraph(graph_t *g,double def_arc_w);
+  SQGraph(fgraph_t* fg,igraph_t* ig,hgraph_t *hg,node_t hroot,double def_arc_w,
+	  fgraph_t::ArcMap<bool> *hmap, fgraph_t::NodeMap<bool> *imap);
 
+  fgraph_t::ArcMap<bool>  *hmap;   // hierarchical graph has same nodes, less arcs
+  fgraph_t::NodeMap<bool> *imap;  // individual graph has only the individual nodes
 } ;
 
-inline SQGraph::SQGraph(graph_t* g,double aw) :
-  Graph_base<lemon::GridGraph>(g,aw)
+inline SQGraph::SQGraph(fgraph_t* fg,igraph_t* ig,hgraph_t *hg,node_t hroot,double def_arc_w,
+			fgraph_t::ArcMap<bool> *hmap, fgraph_t::NodeMap<bool> *imap) : 
+  Graph_base(fg,ig,hg,hroot,def_arc_w),
+  hmap(hmap), imap(imap)
 {}
-
-inline SQGraph* SQGraph::create(int Lx,int Ly)
-{
-  graph_t* g=new graph_t(Lx,Ly);
-  return new SQGraph(g,1.);
-}
 
 #endif /* EGRAPH_HH */

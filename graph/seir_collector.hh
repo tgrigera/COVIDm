@@ -61,26 +61,29 @@ inline std::ostream& operator<<(std::ostream& o,SEIRcollector_base& state)
 //
 // SIRcollector
 
-template <typename IGraph>
+template <typename EGraph>
 class SIRcollector : public SEIRcollector_base {
 public:
-  SIRcollector(SIR_model<IGraph> &model) :
+  typedef SIR_model<EGraph> model_t;
+  
+  SIRcollector(model_t &model) :
     SEIRcollector_base(1,0,1,1),
     model(model)
   {}
   void collect(double time);
 
 protected:
-  SIR_model<IGraph> &model;
+  SIR_model<EGraph> &model;
 } ;
 
-template <typename IGraph>
-void SIRcollector<IGraph>::collect(double time_)
+template <typename EGraph>
+void SIRcollector<EGraph>::collect(double time_)
 {
   time=time_;
-  S[0]=model.NS;
-  I[0]=model.NI;
-  R[0]=model.NR;
+  typename model_t::aggregate_node *anode=model.anodemap[model.hroot];
+  S[0]=anode->NS;
+  I[0]=anode->NI;
+  R[0]=anode->NR;
 
   std::cout << *this << '\n';
 }
@@ -89,11 +92,13 @@ void SIRcollector<IGraph>::collect(double time_)
 //
 // SIRcollector_av
 
-template <typename IGraph>
-class SIRcollector_av : public SIRcollector<IGraph> {
+template <typename EGraph>
+class SIRcollector_av : public SIRcollector<EGraph> {
 public:
-  SIRcollector_av(SIR_model<IGraph> &model,double deltat=1.) :
-    SIRcollector<IGraph>(model),
+  typedef SIR_model<EGraph> model_t;
+
+  SIRcollector_av(SIR_model<EGraph> &model,double deltat=1.) :
+    SIRcollector<EGraph>(model),
     Sav(-0.5*deltat,1.,deltat),
     Iav(-0.5*deltat,1.,deltat),
     Rav(-0.5*deltat,1.,deltat)
@@ -111,11 +116,11 @@ private:
   using SEIRcollector_base::I;
   using SEIRcollector_base::R;
   using SEIRcollector_base::addSIRhdr;
-  using SIRcollector<IGraph>::model;
+  using SIRcollector<EGraph>::model;
 } ;
 
-template <typename IGraph>
-const char *SIRcollector_av<IGraph>::header()
+template <typename EGraph>
+const char *SIRcollector_av<EGraph>::header()
 {
   hdr.clear();
   hdr="#           |----------- Average -------------| |------------ Variance -----------|\n";
@@ -126,16 +131,17 @@ const char *SIRcollector_av<IGraph>::header()
   return hdr.c_str();
 }  
 
-template <typename IGraph>
-void SIRcollector_av<IGraph>::collect(double time)
+template <typename EGraph>
+void SIRcollector_av<EGraph>::collect(double time)
 {
-  Sav.push(time,model.NS);
-  Iav.push(time,model.NI);
-  Rav.push(time,model.NR);
+  typename model_t::aggregate_node *anode=model.anodemap[model.hroot];
+  Sav.push(time,anode->NS);
+  Iav.push(time,anode->NI);
+  Rav.push(time,anode->NR);
 }
 
-template <typename IGraph>
-void SIRcollector_av<IGraph>::print(std::ostream& o,bool print_time)
+template <typename EGraph>
+void SIRcollector_av<EGraph>::print(std::ostream& o,bool print_time)
 {
   std::vector<double> tim,Sa,Sv,Ia,Iv,Ra,Rv;
   Sav.get_aves(tim,Sa,Sv);

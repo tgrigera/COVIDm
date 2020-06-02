@@ -57,27 +57,27 @@ protected:
 
 #include "eevents.hh"
 
-template <typename IGraph>
+template <typename EGraph>
 class Epidemiological_model_graph_base : public Epidemiological_model {
 public:
-  Epidemiological_model_graph_base(IGraph &igraph);
+  Epidemiological_model_graph_base(EGraph &egraph);
   void         compute_all_rates();
-  virtual void compute_rates(typename IGraph::graph_t::Node)=0;
+  virtual void compute_rates(typename EGraph::igraph_t::Node)=0;
 
 protected:
-  IGraph&  igraph;
+  EGraph&  egraph;
 
 } ;
 
-template <typename IGraph>
-inline Epidemiological_model_graph_base<IGraph>::Epidemiological_model_graph_base(IGraph& igraph) :
-  igraph(igraph)
+template <typename EGraph>
+inline Epidemiological_model_graph_base<EGraph>::Epidemiological_model_graph_base(EGraph& egraph) :
+  egraph(egraph)
 {}
 
-template <typename IGraph>
-void Epidemiological_model_graph_base<IGraph>::compute_all_rates()
+template <typename EGraph>
+void Epidemiological_model_graph_base<EGraph>::compute_all_rates()
 {
-  for (typename IGraph::graph_t::NodeIt node(igraph.graph); node!=lemon::INVALID; ++node)
+  for (typename EGraph::igraph_t::NodeIt node(egraph.igraph); node!=lemon::INVALID; ++node)
     compute_rates(node);
   update_cumulative_rates();
 }

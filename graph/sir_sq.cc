@@ -103,12 +103,12 @@ int main(int argc,char* argv[])
   Random_number_generator RNG(options.seed);
 
 #ifdef DEBUG_FCGRAPH
-  FCGraph* igraph = FCGraph::create(options.Lx*options.Ly);
-  SIR_model<FCGraph> SIR(*igraph);
+  FCGraph* egraph = FCGraph::create(options.Lx*options.Ly);
+  SIR_model<FCGraph> SIR(*egraph);
   SIRcollector_av<FCGraph> collector(SIR);
 #else
-  SQGraph* igraph = SQGraph::create(options.Lx,options.Ly);
-  SIR_model<SQGraph> SIR(*igraph);
+  SQGraph* egraph = SQGraph::create(options.Lx,options.Ly);
+  SIR_model<SQGraph> SIR(*egraph);
   SIRcollector_av<SQGraph> collector(SIR);
 #endif
   SIR.set_beta(options.beta);
