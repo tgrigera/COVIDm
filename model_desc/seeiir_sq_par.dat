@@ -1,0 +1,7 @@
+# Lx Ly
+  100 100
+# File to read imported infections
+imported_infections.dat
+# Rate constants vs time
+# time beta sigma_1 sigma_2 gamma_1 gamma_2
+0  0.4    0.1 0.1    0.3 0.3

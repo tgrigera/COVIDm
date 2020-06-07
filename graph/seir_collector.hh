@@ -24,6 +24,7 @@
 #include "../geoave.hh"
 #include "esampler.hh"
 #include "sirmodel.hh"
+#include "seirmodel.hh"
 
 ///////////////////////////////////////////////////////////////////////////////
 //
@@ -159,6 +160,162 @@ void SIRcollector_av<EGraph>::print(std::ostream& o,bool print_time)
     R[0]=Rv[i];
     SEIRcollector_base::print(o,false);
     o << '\n';
+  }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+//
+// SEEIIRcollector
+
+template <typename EGraph>
+class SEEIIRcollector : public SEIRcollector_base {
+public:
+  typedef SEEIIR_model<EGraph> model_t;
+  
+  SEEIIRcollector(model_t &model) :
+    SEIRcollector_base(1,2,2,1),
+    model(model)
+  {}
+  void collect(double time);
+
+protected:
+  SEEIIR_model<EGraph> &model;
+} ;
+
+template <typename EGraph>
+void SEEIIRcollector<EGraph>::collect(double time_)
+{
+  time=time_;
+  typename model_t::aggregate_data *anode=model.anodemap[model.hroot];
+  S[0]=anode->NS;
+  E[0]=anode->NE1;
+  E[1]=anode->NE2;
+  I[0]=anode->NI1;
+  I[1]=anode->NI2;
+  R[0]=anode->NR;
+
+  std::cout << *this << '\n';
+}
+
+///////////////////////////////////////////////////////////////////////////////
+//
+// SEEIIRcollector_av
+
+template <typename EGraph>
+class SEEIIRcollector_av : public SEEIIRcollector<EGraph> {
+public:
+  typedef SEEIIR_model<EGraph> model_t;
+
+  SEEIIRcollector_av(SEEIIR_model<EGraph> &model,double deltat=1.) :
+    SEEIIRcollector<EGraph>(model),
+    Sav(-0.5*deltat,1.,deltat),
+    E1av(-0.5*deltat,1.,deltat),
+    E2av(-0.5*deltat,1.,deltat),
+    I1av(-0.5*deltat,1.,deltat),
+    I2av(-0.5*deltat,1.,deltat),
+    Rav(-0.5*deltat,1.,deltat),
+    Impav(-0.5*deltat,1.,deltat),
+    Closeav(-0.5*deltat,1.,deltat),
+    Commav(-0.5*deltat,1.,deltat),
+    Nav(-0.5*deltat,1.,deltat)
+  {}
+
+  const char* header();
+  void print(std::ostream&,bool print_time=true);
+  void collect(double time);
+
+private:
+  Geoave Sav,E1av,E2av,I1av,I2av,Rav,Impav,Closeav,Commav,Nav;
+
+  using SEIRcollector_base::hdr;
+  using SEIRcollector_base::time;
+  using SEIRcollector_base::S;
+  using SEIRcollector_base::E;
+  using SEIRcollector_base::I;
+  using SEIRcollector_base::R;
+  using SEIRcollector_base::addSIRhdr;
+  using SEIRcollector_base::create_colnums;
+  using SEIRcollector_base::colnums;
+  using SEEIIRcollector<EGraph>::model;
+} ;
+
+template <typename EGraph>
+const char *SEEIIRcollector_av<EGraph>::header()
+{
+  hdr.clear();
+  create_colnums(23);
+  hdr=colnums;
+  hdr+="#           |----------------------------------------------------------- Average -------------------------------------------------------------| |------------------------------------------------------------ Variance -----------------------------------------------------------|\n";
+  hdr+="#      time ";
+  addSIRhdr();
+  hdr+="   Imported  CloseCntct   Community";
+  addSIRhdr();
+  hdr+="    Imported  CloseCntct   Community";
+  return hdr.c_str();
+}  
+
+template <typename EGraph>
+void SEEIIRcollector_av<EGraph>::collect(double time_)
+{
+  typename model_t::aggregate_data *anode=model.anodemap[model.hroot];
+  time=time_;
+  Nav.push(time_,anode->Ntot);
+  Sav.push(time_,anode->NS);
+  E1av.push(time_,anode->NE1);
+  E2av.push(time_,anode->NE2);
+  I1av.push(time_,anode->NI1);
+  I2av.push(time_,anode->NI2);
+  Rav.push(time_,anode->NR);
+  Impav.push(time,anode->Nimported);
+  Closeav.push(time,anode->Nclose);
+  Commav.push(time,anode->Ncommunity);
+
+  S[0]=anode->NS;
+  E[0]=anode->NE1;
+  E[1]=anode->NE2;
+  I[0]=anode->NI1;
+  I[1]=anode->NI2;
+  R[0]=anode->NR;
+}
+
+template <typename EGraph>
+void SEEIIRcollector_av<EGraph>::print(std::ostream& o,bool print_time)
+{
+  std::vector<double> tim,Sa,Sv,E1a,E1v,E2a,E2v,I1a,I1v,I2a,I2v,Ra,Rv,
+    impa,impv,closea,closev,comma,commv,Na,Nv;
+  Nav.get_aves(tim,Na,Nv);
+  Sav.get_aves(tim,Sa,Sv);
+  E1av.get_aves(tim,E1a,E1v);
+  E2av.get_aves(tim,E2a,E2v);
+  I1av.get_aves(tim,I1a,I1v);
+  I2av.get_aves(tim,I2a,I2v);
+  Rav.get_aves(tim,Ra,Rv);
+  Impav.get_aves(tim,impa,impv);
+  Closeav.get_aves(tim,closea,closev);
+  Commav.get_aves(tim,comma,commv);
+
+  char buf[200];
+  for (int i=0; i<Sv.size(); ++i) {
+    time=tim[i];
+    S[0]=Sa[i];
+    E[0]=E1a[i];
+    E[1]=E2a[i];
+    I[0]=I1a[i];
+    I[1]=I2a[i];
+    R[0]=Ra[i];
+    SEIRcollector_base::print(o,print_time);
+    sprintf(buf,"%11.6g %11.6g %11.6g %11.6g",impa[i],closea[i],comma[i],Na[i]);
+    std::cout << buf;
+
+    S[0]=Sv[i];
+    E[0]=E1v[i];
+    E[1]=E2v[i];
+    I[0]=I1v[i];
+    I[1]=I2v[i];
+    R[0]=Rv[i];
+    SEIRcollector_base::print(o,false);
+    sprintf(buf," %11.6g %11.6g %11.6g %11.6g",impv[i],closev[i],commv[i],Nv[i]);
+    std::cout << buf << '\n';
   }
 }
 

@@ -32,6 +32,12 @@ public:
   double  time;
 } ;
 
+typedef std::queue<Event*> event_queue_t;
+
+///////////////////////////////////////////////////////////////////////////////
+//
+// Imported_infection
+
 class Imported_infection : public Event {
 public:
   Imported_infection(double time,int new_cases) :
@@ -45,8 +51,5 @@ inline void Imported_infection::apply(Epidemiological_model* em)
 {
   em->add_imported_infections(this);
 }
-
-typedef std::queue<Event*> event_queue_t;
-
 
 #endif /* EEVENTS_HH */
