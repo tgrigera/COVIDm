@@ -162,3 +162,33 @@ is written to standard otput) and its variance.  In addition, for all
 levels from <img src="/model_desc/tex/ddcb483302ed36a59286424aa5e0be17.svg?invert_in_darkmode&sanitize=true" align=middle width=11.18724254999999pt height=22.465723500000017pt/> down to `detail_level`, the number of infected at each
 node will be written to the same file.
 
+
+## Models on graphs
+
+The SIR and SEEIIR model are also implemented on several graphs.  The
+graphs are described by the connectivity mattrix <img src="/model_desc/tex/3a91172ac0904d6988776a8ee5bd4140.svg?invert_in_darkmode&sanitize=true" align=middle width=19.870705799999985pt height=22.465723500000017pt/>.  Each
+element of the matrix is a real number, giving the _weight_ of the
+bond between nodes <img src="/model_desc/tex/77a3b857d53fb44e33b53e4c8b68351a.svg?invert_in_darkmode&sanitize=true" align=middle width=5.663225699999989pt height=21.68300969999999pt/> and <img src="/model_desc/tex/36b5afebdba34564d884d347484ac0c7.svg?invert_in_darkmode&sanitize=true" align=middle width=7.710416999999989pt height=21.68300969999999pt/> (a weight of 0 means the nodes are not
+connected).  Depending on the graph, <img src="/model_desc/tex/3a91172ac0904d6988776a8ee5bd4140.svg?invert_in_darkmode&sanitize=true" align=middle width=19.870705799999985pt height=22.465723500000017pt/> can be symmetric or not
+(directed graph).
+
+For the SIR model, one has
+
+<p align="center"><img src="/model_desc/tex/7f5f92d35554005032abe3622c2d3679.svg?invert_in_darkmode&sanitize=true" align=middle width=165.2107347pt height=69.11190165pt/></p>
+
+where <img src="/model_desc/tex/06db13d75f55ad4e807b0855961dc632.svg?invert_in_darkmode&sanitize=true" align=middle width=82.63387769999999pt height=22.465723500000017pt/> is the state of individual <img src="/model_desc/tex/77a3b857d53fb44e33b53e4c8b68351a.svg?invert_in_darkmode&sanitize=true" align=middle width=5.663225699999989pt height=21.68300969999999pt/>, and
+<img src="/model_desc/tex/938dcbd8799e6313859df6a8d99ab862.svg?invert_in_darkmode&sanitize=true" align=middle width=25.252984349999988pt height=22.831056599999986pt/> is Kronecker's delta, i. e. <img src="/model_desc/tex/345082af8368d72375693fd63051752e.svg?invert_in_darkmode&sanitize=true" align=middle width=34.60521074999999pt height=22.831056599999986pt/>
+equals 1 if <img src="/model_desc/tex/dcf5d53528d6bd547321757ca613e617.svg?invert_in_darkmode&sanitize=true" align=middle width=45.29952239999999pt height=22.465723500000017pt/>, and 0 otherwise.
+
+Similarly for SEEIIR,
+<p align="center"><img src="/model_desc/tex/bb7771fa3aa4581e621c1ad354a6ff95.svg?invert_in_darkmode&sanitize=true" align=middle width=263.48373480000004pt height=161.41288515pt/></p>
+
+The code is designed so that a model is programmed on a generic graph.
+Graphs are implemented separately form the models, so that any of the
+available models can run on any of the implemented graphs.
+
+The following graphs have been implemented so far.
+
+  * Fully-connected graph
+  * Square lattice
+
