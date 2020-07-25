@@ -6,11 +6,28 @@ models, with emphasis on those most useful to model COVID19.
 
 ** Contents
 
-The source code produces the following executables (the models are
-described [[./model_desc/README.md][here]]):
+The source code produces the executables listed bewlo (the models are
+described [[./model_desc/README.md][here]]).  All models mentioned are implemented in their
+stochastic variants.  The programs read a few arguments from the
+command line, and the model parameters from a parameter file.  Running
+the programs without arguments outputs a brief reminder of the
+required arguments.  The required arguments are typically the name of
+the parameter file, the random number seed, the maximum time to run
+and the number of runs (if this number is greater than one, the output
+will be the average and variance over the different runs).  Unless an
+output file is required as argument, programs write to standard
+output.
 
-  - sir :: Simple fully-connected SIR model.  The simplest
-    implementation, mostly useful as check for other programs.
+The parameter file gives the model parameters and information about
+the population, such as the number of families, and number of family
+members.
+
+
+*** Mean-field-like models
+
+  - sir :: Simple mean-field (fully-connected) SIR model.  The
+    simplest implementation, mostly useful as check for other
+    programs.
 
   - sir_m :: The same fully-connected SIR as in =sir= but with the
     option to do multiple runs and compute mean and variance across
@@ -32,20 +49,6 @@ described [[./model_desc/README.md][here]]):
     alternative implementation without use of the LEMON library, but
     is somewhat slower.  It should not be used.
 
-All models mentioned are implemented in their stochastic variants.
-The programs read a few arguments from the command line, and the model
-parameters from a parameter file.  Running the programs without
-arguments outputs a brief reminder of the required arguments.  The
-required arguments are typically the name of the parameter file, the
-random number seed, the maximum time to run and the number of runs (if
-this number is greater than one, the output will be the average and
-variance over the different runs).  Unless an output file is required
-as argument, programs write to standard output.
-
-The parameter file gives the model parameters and information about
-the population, such as the number of families, and number of family
-members.
-
 The format of the parameter file can be gathered from the examples (in
 the [[./model_desc][model_desc]] directory:
 
@@ -55,6 +58,19 @@ the [[./model_desc][model_desc]] directory:
  - [[file:./model_desc/seeiir_h_par.dat][seeiir_h_par.dat]] :: for =seeiir_h= and =seeir_h_nol=
 
 For the meaning of the parameters, see the [[./model_desc/README.md][model description]].
+
+*** Models on graphs
+
+ - sir_sq :: SIR model on the square lattice.  Example parameter file:
+   [[./model_desc/sir_sq_par.dat][sir_sq_par.dat]].
+
+ - seeiir_sq :: SEEIIR model on the square lattice.    Example parameter file:
+   [[./model_desc/seeiir_sq_par.dat][seeiir_sq_par.dat]].
+
+ - sir_fc :: SIR model on the fully-connected graph (for debugging
+   purposes); parameter file is the same as for =sir_sq=.
+
+
 
 
 * Installation

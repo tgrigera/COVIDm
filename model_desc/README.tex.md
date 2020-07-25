@@ -183,3 +183,43 @@ is written to standard otput) and its variance.  In addition, for all
 levels from $L$ down to `detail_level`, the number of infected at each
 node will be written to the same file.
 
+
+## Models on graphs
+
+The SIR and SEEIIR model are also implemented on several graphs.  The
+graphs are described by the connectivity mattrix $J_{ij}$.  Each
+element of the matrix is a real number, giving the _weight_ of the
+bond between nodes $i$ and $j$ (a weight of 0 means the nodes are not
+connected).  Depending on the graph, $J_{ij}$ can be symmetric or not
+(directed graph).
+
+For the SIR model, one has
+
+\begin{align*}
+  W^{(i)}_{S\to I} &= \beta \sum_j J_{ij} \delta_{\sigma_j, I}, \\
+  W^{(i)}_{I\to R} &= \gamma,
+\end{align*}
+
+where $\sigma_i=S, I, R$ is the state of individual $i$, and
+$\delta_{\sigma,I}$ is Kronecker's delta, i. e. $\delta_{\sigma_,I]i$
+equals 1 if $\sigma_i=I$, and 0 otherwise.
+
+Similarly for SEEIIR,
+\begin{align*}
+   W^{(i)}_{S\to E_1} & = \beta \sum_j J_{ij} \left[ \delta_{\sigma_j, I_1}
+                         + \delta_{\sigma_j, I_2} \right] , \\
+   W^{(i)}_{E_1\to E_2} &=   \sigma_1, \\
+   W^{(i)}_{E_2 \to I_1} &=  \sigma_2, \\
+   W^{(i)}_{I_1 \to I_2} &=   \gamma_1, \\
+   W^{(i)}_{I_2 \to R} &=   \gamma_2. \\
+\end{align*}
+
+The code is designed so that a model is programmed on a generic graph.
+Graphs are implemented separately form the models, so that any of the
+available models can run on any of the implemented graphs.
+
+The following graphs have been implemented so far.
+
+  * Fully-connected graph
+  * Square lattice
+
