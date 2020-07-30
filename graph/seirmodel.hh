@@ -191,6 +191,8 @@ void SEEIIR_model<EGraph>::apply_transition(int itran)
 {
   auto node=egraph.inode(transitions[itran].nodeid);
   auto &noded=inodemap[node];
+  bool need_recomp=false;
+  
   switch(noded.state) {
   case SEEIIR_node::S:
     noded.state=SEEIIR_node::E1;
@@ -211,6 +213,7 @@ void SEEIIR_model<EGraph>::apply_transition(int itran)
     egraph.for_each_anode(node,
 			  [this](typename EGraph::node_t hnode) ->void
 			  {aggregate_data* anode=this->anodemap[hnode]; anode->NE2--; anode->NI1++;} );
+    need_recomp=true;
     break;
 
   case SEEIIR_node::I1:
@@ -225,6 +228,7 @@ void SEEIIR_model<EGraph>::apply_transition(int itran)
     egraph.for_each_anode(node,
 			  [this](typename EGraph::node_t hnode) ->void
 			  {aggregate_data* anode=this->anodemap[hnode]; anode->NI2--; anode->NR++;} );
+    need_recomp=true;
     break;
     
   case SEEIIR_node::R:
@@ -235,8 +239,9 @@ void SEEIIR_model<EGraph>::apply_transition(int itran)
   }
 
   compute_rates(node);
-  for (typename EGraph::igraph_t::InArcIt arc(egraph.igraph,node); arc!=lemon::INVALID; ++arc)
-    compute_rates(egraph.igraph.source(arc));
+  if (need_recomp)
+    for (typename EGraph::igraph_t::InArcIt arc(egraph.igraph,node); arc!=lemon::INVALID; ++arc)
+      compute_rates(egraph.igraph.source(arc));
 }
 
 template<typename EGraph>
