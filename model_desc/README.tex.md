@@ -196,7 +196,7 @@ connected).  Depending on the graph, $J_{ij}$ can be symmetric or not
 For the SIR model, one has
 
 \begin{align*}
-  W^{(i)}_{S\to I} &= \beta \sum_j J_{ij} \delta_{\sigma_j, I}, \\
+  W^{(i)}_{S\to I} &= \beta_0 \sum_j J_{ij} \delta_{\sigma_j, I}, \\
   W^{(i)}_{I\to R} &= \gamma,
 \end{align*}
 
@@ -206,7 +206,7 @@ equals 1 if $\sigma_i=I$, and 0 otherwise.
 
 Similarly for SEEIIR,
 \begin{align*}
-   W^{(i)}_{S\to E_1} & = \beta \sum_j J_{ij} \left[ \delta_{\sigma_j, I_1}
+   W^{(i)}_{S\to E_1} & = \beta_0 \sum_j J_{ij} \left[ \delta_{\sigma_j, I_1}
                          + \delta_{\sigma_j, I_2} \right] , \\
    W^{(i)}_{E_1\to E_2} &=   \sigma_1, \\
    W^{(i)}_{E_2 \to I_1} &=  \sigma_2, \\
@@ -220,6 +220,18 @@ available models can run on any of the implemented graphs.
 
 The following graphs have been implemented so far.
 
-  * Fully-connected graph
-  * Square lattice
+### Square lattice
 
+$J_{ij}=1$ if $i$ and $j$ are neighbours on a square lattice, and 0
+otherwise.  SIR and SEEIIR models run on this graph (`sir_sq` and `seeiir_sq`)
+
+### Fully connected graph
+
+The SIR model is implemented on a simple FC graph where $J_{ij}=1$
+(`sir_fc`).  The SEEIIR model(`seeiir_fc`) is implemented on an FC
+graph where the $J_{ij}$ are given by
+
+$$ J_{ij} = \frac{1}{N\langle \beta\rangle} \beta_i \beta_j, $$
+
+and the $\beta_i$ are drawn from an exponential distribution of mean
+$\lange \beta\rangle$.  See the [parameter file](./seeiir_fc_par.dat).

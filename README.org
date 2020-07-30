@@ -70,6 +70,9 @@ For the meaning of the parameters, see the [[./model_desc/README.md][model descr
  - sir_fc :: SIR model on the fully-connected graph (for debugging
    purposes); parameter file is the same as for =sir_sq=.
 
+ - seeiir_fc :: SEEIIR model on a fully-connected graph with bond
+   weight distribution (see [[model_desc/README.md][model description]]).
+
 
 
 
