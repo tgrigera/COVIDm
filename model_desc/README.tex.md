@@ -228,10 +228,10 @@ otherwise.  SIR and SEEIIR models run on this graph (`sir_sq` and `seeiir_sq`)
 ### Fully connected graph
 
 The SIR model is implemented on a simple FC graph where $J_{ij}=1$
-(`sir_fc`).  The SEEIIR model(`seeiir_fc`) is implemented on an FC
+(`sir_fc`).  The SEEIIR model (`seeiir_fc`) is implemented on an FC
 graph where the $J_{ij}$ are given by
 
 $$ J_{ij} = \frac{1}{N\langle \beta\rangle} \beta_i \beta_j, $$
 
 and the $\beta_i$ are drawn from an exponential distribution of mean
-$\lange \beta\rangle$.  See the [parameter file](./seeiir_fc_par.dat).
+$\langle \beta\rangle$.  See the [parameter file](./seeiir_fc_par.dat).
