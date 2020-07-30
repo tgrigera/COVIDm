@@ -197,10 +197,10 @@ otherwise.  SIR and SEEIIR models run on this graph (`sir_sq` and `seeiir_sq`)
 ### Fully connected graph
 
 The SIR model is implemented on a simple FC graph where <img src="/model_desc/tex/c9b68e17641d236fb3019541ac2f8246.svg?invert_in_darkmode&sanitize=true" align=middle width=50.82941984999999pt height=22.465723500000017pt/>
-(`sir_fc`).  The SEEIIR model(`seeiir_fc`) is implemented on an FC
+(`sir_fc`).  The SEEIIR model (`seeiir_fc`) is implemented on an FC
 graph where the <img src="/model_desc/tex/3a91172ac0904d6988776a8ee5bd4140.svg?invert_in_darkmode&sanitize=true" align=middle width=19.870705799999985pt height=22.465723500000017pt/> are given by
 
 <p align="center"><img src="/model_desc/tex/6b64bb8a482d9288b7629712256ff178.svg?invert_in_darkmode&sanitize=true" align=middle width=120.06764879999999pt height=37.099754999999995pt/></p>
 
 and the <img src="/model_desc/tex/3d13090ef3ed1448f3c4dc166d06ab4d.svg?invert_in_darkmode&sanitize=true" align=middle width=13.948864049999989pt height=22.831056599999986pt/> are drawn from an exponential distribution of mean
-<img src="/model_desc/tex/7c2fdc11a23093a4781b83c65161340d.svg?invert_in_darkmode&sanitize=true" align=middle width=16.55824994999999pt height=24.65753399999998pt/>.  See the [parameter file](./seeiir_fc_par.dat).
+<img src="/model_desc/tex/c9b542784b9c76101bedbbaf0ec5da18.svg?invert_in_darkmode&sanitize=true" align=middle width=22.950967049999992pt height=24.65753399999998pt/>.  See the [parameter file](./seeiir_fc_par.dat).
