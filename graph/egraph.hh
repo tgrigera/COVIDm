@@ -45,6 +45,9 @@ typedef lemon::SmartDigraph digraph_t;
 //
 // Base class for all epidemiological graphs
 //
+// NOTE that the class is written assuming that the graph is static (i.e. links and
+// nodes are not added or deleted during the simulation).
+//
 // Provides two graphs to the model-implementing classes:
 //
 //   - igraph: A graph which includes only nodes representing individuals,
@@ -56,6 +59,19 @@ typedef lemon::SmartDigraph digraph_t;
 //             hierarchy.  No arcs between individual nodes.
 //
 //   - fgraph: The full graph from which the other two are obtained through filtering
+//
+// Node identities:
+//
+//   nodes can be selected with:
+//       -  a node object (type node_t, hnode_t, inode_t)
+//       -  a node id (lemon's idmap, obtained through id methods), this does not change
+//       -  an integer (lemon's rangemap, obtained through rangeid methods), this can change
+//          if nodes are added or deleted
+//
+//  We provide methods id() and inode() to convert from node to ids (for the individual graph)
+//  more easily.  Unfortunately the RangeIdMap does not seem to work correctly for the individual
+//  graph, which is an adapted graph (lemon::FilterNodes).  We thus provide custom-implemented
+//  random_inode() method that returns a randomly chose individual node.
 
 class Graph_base {
 public:
@@ -63,14 +79,16 @@ public:
   typedef lemon::FilterArcs<digraph_t>  hgraph_t;
   typedef lemon::FilterNodes<digraph_t> igraph_t;
   typedef typename fgraph_t::Node       node_t;
+  typedef typename hgraph_t::Node       inode_t;
+  typedef typename igraph_t::Node       fnode_t;
   typedef typename fgraph_t::Arc        arc_t;
 
   igraph_t &igraph;               
   hgraph_t &hgraph;
   double   arc_weight(arc_t arc);
-  node_t   inode(int id);
-  node_t   random_inode();
-  int      id(node_t);
+  inode_t  random_inode();
+  int      id(node_t);             // returns Lemon's unique id 
+  inode_t  inode(int id);          // returns a node referenced by id (obtained through id() method)
 
   template <typename Fun>
   void     for_each_anode(node_t,Fun fun);
@@ -83,15 +101,15 @@ protected:
 	     node_t hroot,double default_arc_weight=1.);
   ~Graph_base();
 
-  fgraph_t                                           *fgraphp;
-  igraph_t                                           *igraphp;
-  hgraph_t                                           *hgraphp;
-  fgraph_t                                           &fgraph;
-  lemon::IdMap<igraph_t,igraph_t::Node>     idmap;
-  lemon::RangeIdMap<igraph_t,igraph_t::Node> rangemap;
-  Uniform_integer                                    ran;
-  double                                             default_arc_weight;
-  typename igraph_t::template ArcMap<double>         arcmap;
+  fgraph_t                                   *fgraphp;
+  igraph_t                                   *igraphp;
+  hgraph_t                                   *hgraphp;
+  fgraph_t                                   &fgraph;
+
+  Uniform_integer                              ran;
+  double                                       default_arc_weight;
+  typename igraph_t::template ArcMap<double>   arcmap;
+  std::vector<inode_t>                         rangemap;  // must build a custom one because Lemon's does not work with graph adaptors
 
 } ;
 
@@ -100,12 +118,13 @@ inline Graph_base::Graph_base(fgraph_t* fgraphp,igraph_t* igraphp,hgraph_t* hgra
   fgraphp(fgraphp), igraphp(igraphp), hgraphp(hgraphp),
   fgraph(*fgraphp), igraph(*igraphp), hgraph(*hgraphp),
   hroot(hroot),
-  idmap(igraph),
-  rangemap(igraph),
   default_arc_weight(default_arc_weight),
   arcmap(igraph,default_arc_weight)
 {
   inode_count=lemon::countNodes(igraph);
+  rangemap.reserve(inode_count);
+  for (igraph_t::NodeIt n(igraph); n!=lemon::INVALID; ++n)
+    rangemap.push_back(n);
 }
 
 inline Graph_base::~Graph_base()
@@ -120,21 +139,23 @@ inline double Graph_base::arc_weight(Graph_base::arc_t arc)
   return arcmap[arc];
 }
 
-inline Graph_base::node_t Graph_base::inode(int id)
+inline int Graph_base::id(Graph_base::inode_t node)
 {
-  return idmap(id);
+  return igraph.id(node);
 }
 
-inline int Graph_base::id(Graph_base::node_t node)
+inline Graph_base::inode_t Graph_base::inode(int id)
 {
-  return idmap[node];
+  return igraph.nodeFromId(id);
 }
 
-inline Graph_base::node_t Graph_base::random_inode()
+inline Graph_base::inode_t Graph_base::random_inode()
 {
-  return rangemap(ran(rangemap.size()));
+  return rangemap[ran(rangemap.size())];
 }
 
+// Applies a function to all aggregate (hierarchichal) nodes starting at inode.
+// assumes each node has only one parent (incoming arc) of higher hierarchy
 template <typename Fun>
 void Graph_base::for_each_anode(node_t inode,Fun fun)
 {
@@ -153,6 +174,7 @@ class FCGraph : public Graph_base  {
 public:
   static FCGraph* create(int N);
   ~FCGraph();
+  void set_weights_random_multiplicative(double (*betadist)(),double scale);
 
 private:
   FCGraph(fgraph_t* fg,igraph_t* ig,hgraph_t *hg,node_t hroot,double def_arc_w,
@@ -199,5 +221,30 @@ inline SQGraph::SQGraph(fgraph_t* fg,igraph_t* ig,hgraph_t *hg,node_t hroot,doub
   Graph_base(fg,ig,hg,hroot,def_arc_w),
   hmap(hmap), imap(imap)
 {}
+
+
+///////////////////////////////////////////////////////////////////////////////
+//
+// Hierarchical fully-connected  graph
+
+// class HFCGraph : public Graph_base {
+// public:
+//   static HFCGraph* create(int Lx,int Ly);
+//   ~HFCGraph();
+
+// private:
+//   HFCGraph(fgraph_t* fg,igraph_t* ig,hgraph_t *hg,node_t hroot,double def_arc_w,
+// 	   fgraph_t::ArcMap<bool> *hmap, fgraph_t::NodeMap<bool> *imap);
+
+//   fgraph_t::ArcMap<bool>  *hmap;   // hierarchical graph has same nodes, less arcs
+//   fgraph_t::NodeMap<bool> *imap;  // individual graph has only the individual nodes
+// } ;
+
+// inline HFCGraph::HFCGraph(fgraph_t* fg,igraph_t* ig,hgraph_t *hg,node_t hroot,double def_arc_w,
+// 			  fgraph_t::ArcMap<bool> *hmap, fgraph_t::NodeMap<bool> *imap) : 
+//   Graph_base(fg,ig,hg,hroot,def_arc_w),
+//   hmap(hmap), imap(imap)
+// {}
+
 
 #endif /* EGRAPH_HH */

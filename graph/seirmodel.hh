@@ -244,6 +244,8 @@ void SEEIIR_model<EGraph>::add_imported_infections(Imported_infection* ii)
 {
   typename EGraph::igraph_t::Node node;
 
+  if (ii->new_cases > anodemap[hroot]->NS)
+    throw std::runtime_error("Too many imported infections");
   for (int i=0; i<ii->new_cases; ++i) {
     do node=egraph.random_inode(); while(inodemap[node].state!=SEEIIR_node::S);
     inodemap[node].state=SEEIIR_node::I1;
@@ -255,6 +257,8 @@ void SEEIIR_model<EGraph>::add_imported_infections(Imported_infection* ii)
     for (typename EGraph::igraph_t::InArcIt arc(egraph.igraph,node); arc!=lemon::INVALID; ++arc)
       compute_rates(egraph.igraph.source(arc));
   }
+
+
 }
 
 
