@@ -186,11 +186,11 @@ void SIRstate_av::print(std::ostream& o,bool print_time)
 const char *SEEIIRstate::header()
 {
   hdr.clear();
-  create_colnums(14);
+  create_colnums(15);
   hdr=colnums;
   hdr+="#      time ";
   addSIRhdr();
-  hdr+="   Imported  CloseCntct   Community           N    beta_out";
+  hdr+="   Imported  CloseCntct   Community           N    beta_out R(Rep.Rate)";
   return hdr.c_str();
 }  
 
@@ -204,9 +204,15 @@ void SEEIIRstate::push(double time_,SEEIIRistate &s)
   I[1]=s.I2;
   R[0]=s.R;
   Population_state::print(std::cout,true);
+
+  int inftot=s.inf_imported+s.inf_close+s.inf_community;
+  double RR = s.tinf * (inftot - inf_accum0)/( (time-time0) * (I[0]+I[1]) );
+  time0=time;
+  inf_accum0=inftot;
+
   char buf[200];
-  sprintf(buf,"%11d %11d %11d %11d %11.6g",s.inf_imported,s.inf_close,s.inf_community,
-	  s.N,s.beta_out);
+  sprintf(buf,"%11d %11d %11d %11d %11.6g %11.6g",s.inf_imported,s.inf_close,s.inf_community,
+	  s.N,s.beta_out,RR);
   std::cout << buf << '\n';
 }
 
@@ -217,14 +223,14 @@ void SEEIIRstate::push(double time_,SEEIIRistate &s)
 const char *SEEIIRstate_av::header()
 {
   hdr.clear();
-  create_colnums(27);
+  create_colnums(29);
   hdr=colnums;
-  hdr+="#           |------------------------------------------------------------------------ Average ------------------------------------------------------------------------| |----------------------------------------------------------------------- Variance ------------------------------------------------------------------------|\n";
+  hdr+="#           |------------------------------------------------------------------------------ Average ------------------------------------------------------------------------------| |----------------------------------------------------------------------------- Variance ------------------------------------------------------------------------------|\n";
   hdr+="#      time ";
   addSIRhdr();
-  hdr+="   Imported  CloseCntct   Community           N    beta_out";
+  hdr+="   Imported  CloseCntct   Community           N    beta_out R(Rep.Rate)";
   addSIRhdr();
-  hdr+="    Imported  CloseCntct   Community           N    beta_out";
+  hdr+="    Imported  CloseCntct   Community           N    beta_out R(Rep.Rate)";
   return hdr.c_str();
 }  
 
@@ -241,12 +247,17 @@ void SEEIIRstate_av::push(double time,SEEIIRistate &s)
   Closeav.push(time,s.inf_close);
   Commav.push(time,s.inf_community);
   betaav.push(time,s.beta_out);
+  int inftot=s.inf_imported+s.inf_close+s.inf_community;
+  double RR = s.tinf * (inftot - inf_accum0)/( (time-time0) * (s.I1+s.I2) );
+  time0=time;
+  inf_accum0=inftot;
+  RRav.push(time,RR);
 }
 
 void SEEIIRstate_av::print(std::ostream& o,bool print_time)
 {
   std::vector<double> tim,Sa,Sv,E1a,E1v,E2a,E2v,I1a,I1v,I2a,I2v,Ra,Rv,
-    impa,impv,closea,closev,comma,commv,betaa,betav,Na,Nv;
+    impa,impv,closea,closev,comma,commv,betaa,betav,Na,Nv,RRa,RRv;
   Nav.get_aves(tim,Na,Nv);
   Sav.get_aves(tim,Sa,Sv);
   E1av.get_aves(tim,E1a,E1v);
@@ -258,6 +269,7 @@ void SEEIIRstate_av::print(std::ostream& o,bool print_time)
   Closeav.get_aves(tim,closea,closev);
   Commav.get_aves(tim,comma,commv);
   betaav.get_aves(tim,betaa,betav);
+  RRav.get_aves(tim,RRa,RRv);
 
   char buf[200];
   for (int i=0; i<Sv.size(); ++i) {
@@ -269,7 +281,7 @@ void SEEIIRstate_av::print(std::ostream& o,bool print_time)
     I[1]=I2a[i];
     R[0]=Ra[i];
     Population_state::print(o,print_time);
-    sprintf(buf,"%11.6g %11.6g %11.6g %11.6g %11.6g",impa[i],closea[i],comma[i],Na[i],betaa[i]);
+    sprintf(buf,"%11.6g %11.6g %11.6g %11.6g %11.6g %11.6g",impa[i],closea[i],comma[i],Na[i],betaa[i],RRa[i]);
     std::cout << buf;
 
     S[0]=Sv[i];
@@ -279,7 +291,7 @@ void SEEIIRstate_av::print(std::ostream& o,bool print_time)
     I[1]=I2v[i];
     R[0]=Rv[i];
     Population_state::print(o,false);
-    sprintf(buf," %11.6g %11.6g %11.6g %11.6g %11.6g",impv[i],closev[i],commv[i],Nv[i],betav[i]);
+    sprintf(buf," %11.6g %11.6g %11.6g %11.6g %11.6g %11.6g",impv[i],closev[i],commv[i],Nv[i],betav[i],RRv[i]);
     std::cout << buf << '\n';
   }
 }

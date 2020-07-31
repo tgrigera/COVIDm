@@ -127,6 +127,7 @@ void SEIRPopulation::rebuild_families()
   gstate.N=gstate.S=gstate.E1=gstate.E2=gstate.I1=gstate.I2=gstate.R=0;
   gstate.inf_close=gstate.inf_community=gstate.inf_imported=0;
   gstate.beta_out=beta_out;
+  gstate.tinf=1./gamma;
 
   Family *fam;
   families.clear();
