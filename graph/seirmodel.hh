@@ -40,6 +40,8 @@ public:
   void set_rate_constants(double beta,double sigma1,double sigma2,double gamma1,
 			  double gamma2);
 
+  double tinf() { return 1./gamma1 + 1./gamma2;}
+
   struct SEEIIR_node {
     enum {S,E1,E2,I1,I2,R} state;
     int  itransition;
@@ -47,7 +49,8 @@ public:
   struct aggregate_data {
     int Ntot;
     int NS,NE1,NE2,NI1,NI2,NR;
-    int Nimported,Nclose,Ncommunity;
+    int inf_accum;
+    int inf_imported,inf_close,inf_community;
   } ;
 
   typename EGraph::node_t   hroot;
@@ -110,7 +113,7 @@ void SEEIIR_model<EGraph>::recompute_counts(typename EGraph::node_t lroot)
     anodemap[lroot]=anode;
   }
   anode->NS=anode->NE1=anode->NE2=anode->NI1=anode->NI2=anode->NR=0;
-  anode->Nimported=anode->Nclose=anode->Ncommunity=0;
+  anode->inf_accum=anode->inf_imported=anode->inf_close=anode->inf_community=0;
   anode->Ntot=0;
   for (typename EGraph::hgraph_t::OutArcIt arc(egraph.hgraph,lroot); arc!=lemon::INVALID; ++arc) {
     auto lnode=egraph.hgraph.target(arc);
@@ -212,7 +215,7 @@ void SEEIIR_model<EGraph>::apply_transition(int itran)
     noded.state=SEEIIR_node::I1;
     egraph.for_each_anode(node,
 			  [this](typename EGraph::node_t hnode) ->void
-			  {aggregate_data* anode=this->anodemap[hnode]; anode->NE2--; anode->NI1++;} );
+			  {aggregate_data* anode=this->anodemap[hnode]; anode->inf_accum++; anode->inf_close++; anode->NE2--; anode->NI1++;} );
     need_recomp=true;
     break;
 
@@ -257,7 +260,7 @@ void SEEIIR_model<EGraph>::add_imported_infections(Imported_infection* ii)
     egraph.for_each_anode(node,
 		   [this](typename EGraph::node_t hnode)
 		   {aggregate_data* anode=this->anodemap[hnode];
-		     anode->NS--; anode->NI1++; anode->Nimported++; }  );
+		     anode->NS--; anode->NI1++; anode->inf_imported++; anode->inf_accum++; }  );
     compute_rates(node);
     for (typename EGraph::igraph_t::InArcIt arc(egraph.igraph,node); arc!=lemon::INVALID; ++arc)
       compute_rates(egraph.igraph.source(arc));

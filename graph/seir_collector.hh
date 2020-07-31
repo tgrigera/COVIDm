@@ -174,18 +174,44 @@ public:
   
   SEEIIRcollector(model_t &model) :
     SEIRcollector_base(1,2,2,1),
-    model(model)
+    model(model),
+    time0(0),
+    inf_accum0(0)
   {}
+  const char* header();
+  void print(std::ostream&,bool print_time=true);
   void collect(double time);
 
 protected:
   SEEIIR_model<EGraph> &model;
+
+private:
+  double time0;
+  int    inf_accum0;
 } ;
+
+template <typename EGraph>
+const char *SEEIIRcollector<EGraph>::header()
+{
+  hdr.clear();
+  create_colnums(14);
+  hdr=colnums;
+  hdr+="#      time ";
+  addSIRhdr();
+  hdr+="   Imported  CloseCntct   Community       Total R(Rep.Rate)";
+  return hdr.c_str();
+}
 
 template <typename EGraph>
 void SEEIIRcollector<EGraph>::collect(double time_)
 {
   time=time_;
+  std::cout << *this << '\n';
+}
+
+template <typename EGraph>
+void SEEIIRcollector<EGraph>::print(std::ostream& o,bool print_time)
+{
   typename model_t::aggregate_data *anode=model.anodemap[model.hroot];
   S[0]=anode->NS;
   E[0]=anode->NE1;
@@ -193,8 +219,15 @@ void SEEIIRcollector<EGraph>::collect(double time_)
   I[0]=anode->NI1;
   I[1]=anode->NI2;
   R[0]=anode->NR;
+  SEIRcollector_base::print(o,print_time);
 
-  std::cout << *this << '\n';
+  double RR = model.tinf() * (anode->inf_accum-inf_accum0)/( (time-time0) * (I[0]+I[1]) );
+  time0=time;
+  inf_accum0=anode->inf_accum;
+
+  char buf[500];
+  sprintf(buf,"%11d %11d %11d %11d %11.6g",anode->inf_imported,anode->inf_close,anode->inf_community,anode->inf_accum,RR);
+  std::cout << buf << '\n';
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -217,7 +250,11 @@ public:
     Impav(-0.5*deltat,1.,deltat),
     Closeav(-0.5*deltat,1.,deltat),
     Commav(-0.5*deltat,1.,deltat),
-    Nav(-0.5*deltat,1.,deltat)
+    Nav(-0.5*deltat,1.,deltat),
+    Totalinf(-0.5*deltat,1.,deltat),
+    RR(-0.5*deltat,1.,deltat),
+    time0(0),
+    inf_accum0(0)
   {}
 
   const char* header();
@@ -225,7 +262,9 @@ public:
   void collect(double time);
 
 private:
-  Geoave Sav,E1av,E2av,I1av,I2av,Rav,Impav,Closeav,Commav,Nav;
+  Geoave Sav,E1av,E2av,I1av,I2av,Rav,Impav,Closeav,Commav,Nav,Totalinf,RR;
+  double time0;
+  int    inf_accum0;
 
   using SEIRcollector_base::hdr;
   using SEIRcollector_base::time;
@@ -243,14 +282,14 @@ template <typename EGraph>
 const char *SEEIIRcollector_av<EGraph>::header()
 {
   hdr.clear();
-  create_colnums(23);
+  create_colnums(27);
   hdr=colnums;
-  hdr+="#           |----------------------------------------------------------- Average -------------------------------------------------------------| |------------------------------------------------------------ Variance -----------------------------------------------------------|\n";
+  hdr+="#           |---------------------------------------------------------------------- Average --------------------------------------------------------------------------| |------------------------------------------------------------------------ Variance -----------------------------------------------------------------------|\n";
   hdr+="#      time ";
   addSIRhdr();
-  hdr+="   Imported  CloseCntct   Community";
+  hdr+="   Imported  CloseCntct   Community       Total R(Rep.Rate) ";
   addSIRhdr();
-  hdr+="    Imported  CloseCntct   Community";
+  hdr+="    Imported  CloseCntct   Community       Total R(Rep.Rate)";
   return hdr.c_str();
 }  
 
@@ -266,9 +305,10 @@ void SEEIIRcollector_av<EGraph>::collect(double time_)
   I1av.push(time_,anode->NI1);
   I2av.push(time_,anode->NI2);
   Rav.push(time_,anode->NR);
-  Impav.push(time,anode->Nimported);
-  Closeav.push(time,anode->Nclose);
-  Commav.push(time,anode->Ncommunity);
+  Impav.push(time,anode->inf_imported);
+  Closeav.push(time,anode->inf_close);
+  Commav.push(time,anode->inf_community);
+  Totalinf.push(time,anode->inf_accum);
 
   S[0]=anode->NS;
   E[0]=anode->NE1;
@@ -276,13 +316,19 @@ void SEEIIRcollector_av<EGraph>::collect(double time_)
   I[0]=anode->NI1;
   I[1]=anode->NI2;
   R[0]=anode->NR;
+
+  double RRi = model.tinf() * (anode->inf_accum-inf_accum0)/( (time-time0) * (I[0]+I[1]) );
+  time0=time;
+  inf_accum0=anode->inf_accum;
+  RR.push(time,RRi);
+
 }
 
 template <typename EGraph>
 void SEEIIRcollector_av<EGraph>::print(std::ostream& o,bool print_time)
 {
   std::vector<double> tim,Sa,Sv,E1a,E1v,E2a,E2v,I1a,I1v,I2a,I2v,Ra,Rv,
-    impa,impv,closea,closev,comma,commv,Na,Nv;
+    impa,impv,closea,closev,comma,commv,totala,totalv,Na,Nv,RRa,RRv;
   Nav.get_aves(tim,Na,Nv);
   Sav.get_aves(tim,Sa,Sv);
   E1av.get_aves(tim,E1a,E1v);
@@ -293,8 +339,10 @@ void SEEIIRcollector_av<EGraph>::print(std::ostream& o,bool print_time)
   Impav.get_aves(tim,impa,impv);
   Closeav.get_aves(tim,closea,closev);
   Commav.get_aves(tim,comma,commv);
+  Totalinf.get_aves(tim,totala,totalv);
+  RR.get_aves(tim,RRa,RRv);
 
-  char buf[200];
+  char buf[500];
   for (int i=0; i<Sv.size(); ++i) {
     time=tim[i];
     S[0]=Sa[i];
@@ -302,9 +350,9 @@ void SEEIIRcollector_av<EGraph>::print(std::ostream& o,bool print_time)
     E[1]=E2a[i];
     I[0]=I1a[i];
     I[1]=I2a[i];
-    R[0]=Ra[i];
+
     SEIRcollector_base::print(o,print_time);
-    sprintf(buf,"%11.6g %11.6g %11.6g %11.6g",impa[i],closea[i],comma[i],Na[i]);
+    sprintf(buf,"%11.6g %11.6g %11.6g %11.6g %11.6g ",impa[i],closea[i],comma[i],totala[i],RRa[i]);
     std::cout << buf;
 
     S[0]=Sv[i];
@@ -314,7 +362,7 @@ void SEEIIRcollector_av<EGraph>::print(std::ostream& o,bool print_time)
     I[1]=I2v[i];
     R[0]=Rv[i];
     SEIRcollector_base::print(o,false);
-    sprintf(buf," %11.6g %11.6g %11.6g %11.6g",impv[i],closev[i],commv[i],Nv[i]);
+    sprintf(buf," %11.6g %11.6g %11.6g %11.6g %11.6g",impv[i],closev[i],commv[i],totalv[i],RRv[i]);
     std::cout << buf << '\n';
   }
 }

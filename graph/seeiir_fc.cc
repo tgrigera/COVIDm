@@ -123,7 +123,7 @@ void read_parameters(int argc,char *argv[])
 
   read_rates_vs_time(f);
   fclose(f);
-  printf("#\n# Rate constatst:\n");
+  printf("#\n# Rate constants:\n");
   printf("# time beta_0 sigma_1 sigma_2 gamma_1 gamma_2\n");
   for (auto r:options.rates_vs_time)
     printf("# %g %g %g %g %g %g\n",r.time,r.beta,r.sigma1,r.sigma2,r.gamma1,r.gamma2);
