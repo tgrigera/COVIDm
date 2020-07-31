@@ -4,9 +4,9 @@
 # options
 # exponential distribution with mean mu:
 # exp  mu
-exp 0.04
+exp 0.4
 # File to read imported infections
 imported_infections.dat
 # Rate constants vs time
 # time beta0 sigma_1 sigma_2 gamma_1 gamma_2
-0   1  0.192307692308 0.192307692308  0.1 0.1
+      0   1  0.67    0.67     0.29  0.29

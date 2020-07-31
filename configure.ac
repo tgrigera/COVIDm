@@ -30,6 +30,7 @@ AC_CHECK_FUNCS([strerror])
 
 # Checks for header files.
 AC_CHECK_HEADERS([stdlib.h string.h])
+AC_CHECK_LIB([gslcblas],[cblas_dgemm])
 AC_CHECK_HEADER([gsl/gsl_rng.h],,exit)
 AC_CHECK_HEADER([lemon/list_graph.h],,exit)
 

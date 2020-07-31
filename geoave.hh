@@ -43,6 +43,8 @@
 
 #include <ostream>
 #include <vector>
+#include <stdexcept>
+#include <errno.h>
 #include <math.h>
 
 /** \class Geoave

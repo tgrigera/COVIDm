@@ -21,6 +21,7 @@
 
 #include <iostream>
 #include <numeric>
+#include <cstdio>
 
 #include "popstate.hh"
 

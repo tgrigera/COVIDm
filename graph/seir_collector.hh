@@ -102,7 +102,8 @@ public:
     SIRcollector<EGraph>(model),
     Sav(-0.5*deltat,1.,deltat),
     Iav(-0.5*deltat,1.,deltat),
-    Rav(-0.5*deltat,1.,deltat)
+    Rav(-0.5*deltat,1.,deltat),
+    hdr( SEIRcollector_base::hdr)
   {}
 
   const char* header();
@@ -111,7 +112,7 @@ public:
 
 private:
   Geoave Sav,Iav,Rav;
-  using SEIRcollector_base::hdr;
+  std::string &hdr;
   using SEIRcollector_base::time;
   using SEIRcollector_base::S;
   using SEIRcollector_base::I;
@@ -254,7 +255,8 @@ public:
     Totalinf(-0.5*deltat,1.,deltat),
     RR(-0.5*deltat,1.,deltat),
     time0(0),
-    inf_accum0(0)
+    inf_accum0(0),
+    hdr(SEIRcollector_base::hdr)
   {}
 
   const char* header();
@@ -266,7 +268,7 @@ private:
   double time0;
   int    inf_accum0;
 
-  using SEIRcollector_base::hdr;
+  std::string &hdr;
   using SEIRcollector_base::time;
   using SEIRcollector_base::S;
   using SEIRcollector_base::E;
@@ -289,7 +291,7 @@ const char *SEEIIRcollector_av<EGraph>::header()
   addSIRhdr();
   hdr+="   Imported  CloseCntct   Community       Total R(Rep.Rate) ";
   addSIRhdr();
-  hdr+="    Imported  CloseCntct   Community       Total R(Rep.Rate)";
+  hdr+="   Imported  CloseCntct   Community       Total R(Rep.Rate)";
   return hdr.c_str();
 }  
 
@@ -362,7 +364,7 @@ void SEEIIRcollector_av<EGraph>::print(std::ostream& o,bool print_time)
     I[1]=I2v[i];
     R[0]=Rv[i];
     SEIRcollector_base::print(o,false);
-    sprintf(buf," %11.6g %11.6g %11.6g %11.6g %11.6g",impv[i],closev[i],commv[i],totalv[i],RRv[i]);
+    sprintf(buf,"%11.6g %11.6g %11.6g %11.6g %11.6g",impv[i],closev[i],commv[i],totalv[i],RRv[i]);
     std::cout << buf << '\n';
   }
 }

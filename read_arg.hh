@@ -18,6 +18,8 @@
  *
  */
 
+#include <stdexcept>
+
 template <typename T>
 void read_arg(char *argv[],T& opt)
 { throw std::runtime_error("unimplemented argument conversion"); }
