@@ -367,6 +367,7 @@ void run(SEIRPopulation &pop,SEEIIRstate *state)
   
   event_queue_t events=event_queue;
 
+  if (options.beta_out<0) pop.set_beta_out(0);
   while (time<=options.steps) {
 
     // compute transition probabilities
