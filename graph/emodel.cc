@@ -54,7 +54,9 @@ void run(Epidemiological_model *model,Sampler* sampler,event_queue_t& events,dou
   double deltat,time=0;
 
   event_queue_t levents=events;
-  levents.push(new Event(std::numeric_limits<double>::max()));
+  Event* last_event=new Event(std::numeric_limits<double>::max());
+  levents.push(last_event);
+
   model->set_all_susceptible();
   model->compute_all_rates();
   while (time<=tmax) {
@@ -87,4 +89,6 @@ void run(Epidemiological_model *model,Sampler* sampler,event_queue_t& events,dou
 	
     }
   }
+
+  delete last_event;
 }

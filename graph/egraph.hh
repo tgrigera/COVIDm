@@ -99,7 +99,7 @@ public:
 protected:
   Graph_base(fgraph_t* fgraphp,igraph_t* igraphp,hgraph_t* hgraphp,
 	     node_t hroot,double default_arc_weight=1.);
-  ~Graph_base();
+  virtual ~Graph_base();
 
   fgraph_t                                   *fgraphp;
   igraph_t                                   *igraphp;
@@ -123,13 +123,6 @@ inline Graph_base::Graph_base(fgraph_t* fgraphp,igraph_t* igraphp,hgraph_t* hgra
   rangemap.reserve(inode_count);
   for (igraph_t::NodeIt n(igraph); n!=lemon::INVALID; ++n)
     rangemap.push_back(n);
-}
-
-inline Graph_base::~Graph_base()
-{
-  delete fgraphp;
-  delete igraphp;
-  delete hgraphp;
 }
 
 inline int Graph_base::id(Graph_base::inode_t node)
@@ -166,7 +159,7 @@ void Graph_base::for_each_anode(node_t inode,Fun fun)
 class FCGraph : public Graph_base  { 
 public:
   static FCGraph* create(int N);
-  ~FCGraph();
+  virtual ~FCGraph();
 
 protected:
   struct FCGraph_ctor_data {
@@ -200,12 +193,6 @@ inline FCGraph* FCGraph::create(int N)
   return new FCGraph(create_ctor_data(N));
 }
 
-inline FCGraph::~FCGraph()
-{
-  delete hmap;
-  delete imap;
-}
-
 //
 // FC graph with multiplicative weights
 //
@@ -213,7 +200,6 @@ inline FCGraph::~FCGraph()
 class MWFCGraph : public FCGraph {
 public:
   static MWFCGraph* create(int N);
-  ~MWFCGraph();
   double arc_weight(arc_t arc);
   void set_weights_random_multiplicative(double (*betadist)(),double scale);
 
@@ -241,7 +227,7 @@ inline MWFCGraph* MWFCGraph::create(int N)
 class SQGraph : public Graph_base {
 public:
   static SQGraph* create(int Lx,int Ly);
-  ~SQGraph();
+  ~SQGraph() {}
 
 private:
   SQGraph(fgraph_t* fg,igraph_t* ig,hgraph_t *hg,node_t hroot,double def_arc_w,

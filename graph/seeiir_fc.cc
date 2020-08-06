@@ -220,18 +220,22 @@ int main(int argc,char* argv[])
     break;
   }
 
-  SEEIIR_model<MWFCGraph> SEEIIR(*egraph);
+  SEEIIR_model<MWFCGraph> *SEEIIR = new SEEIIR_model<MWFCGraph>(*egraph);
   SEEIIRcollector<MWFCGraph> *collector =
     options.Nruns > 1 ?
-    new SEEIIRcollector_av<MWFCGraph>(SEEIIR,1.) :
-    new SEEIIRcollector<MWFCGraph>(SEEIIR);
+    new SEEIIRcollector_av<MWFCGraph>(*SEEIIR,1.) :
+    new SEEIIRcollector<MWFCGraph>(*SEEIIR);
   
   std::cout << collector->header() << '\n';
   for (int n=0; n<options.Nruns; ++n) {
     merge_events();
     Sampler *sampler =  new Gillespie_sampler(0,options.steps,1.,collector);
-    run(&SEEIIR,sampler,event_queue,options.steps);
+    run(SEEIIR,sampler,event_queue,options.steps);
     delete sampler;
   }
   if (options.Nruns>1) std::cout << *collector;
+  
+  delete collector;
+  delete SEEIIR;
+  delete egraph;
 }

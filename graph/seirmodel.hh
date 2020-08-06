@@ -33,6 +33,7 @@ template<typename EGraph>
 class SEEIIR_model : public Epidemiological_model_graph_base<EGraph> {
 public:
   SEEIIR_model(EGraph&);
+  ~SEEIIR_model();
   void set_all_susceptible();
   void apply_transition(int);
   void compute_rates(typename EGraph::igraph_t::Node);
@@ -80,6 +81,13 @@ SEEIIR_model<EGraph>::SEEIIR_model(EGraph& egraph) :
     Epidemiological_model::transition tr={egraph.id(inode),0,0};
     transitions.push_back(tr);
   }
+}
+
+template<typename EGraph>
+SEEIIR_model<EGraph>::~SEEIIR_model()
+{
+  for (typename EGraph::hgraph_t::NodeIt anode(egraph.hgraph); anode!=lemon::INVALID; ++anode)
+    delete anodemap[anode];
 }
 
 template<typename EGraph>

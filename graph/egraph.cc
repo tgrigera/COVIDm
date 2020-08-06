@@ -26,6 +26,13 @@
 //
 // Graph_base
 
+Graph_base::~Graph_base()
+{
+  delete fgraphp;
+  delete igraphp;
+  delete hgraphp;
+}
+
 double Graph_base::arc_weight(Graph_base::arc_t arc)
 {
   return default_arc_weight;
@@ -63,6 +70,12 @@ FCGraph::FCGraph_ctor_data* FCGraph::create_ctor_data(int N)
   cdata->hg = new hgraph_t(*(cdata->fg),*(cdata->hmap));
 
   return cdata;
+}
+
+FCGraph::~FCGraph()
+{
+  delete hmap;
+  delete imap;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
