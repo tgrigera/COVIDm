@@ -1,7 +1,7 @@
 /*
  * seirmodel.hh -- classes for the SEIR model on graphs
  *
- * The classes here implement different epidemiological models.  They
+ * The classes here implement the SEIR or SEEIIR model.  They
  * are coded generically and can be used over any graph provided by
  * egraph.hh.
  *
@@ -24,6 +24,9 @@
 
 #ifndef SEIRMODEL_HH
 #define SEIRMODEL_HH
+
+#include "egraph.hh"
+#include "emodel.hh"
 
 ///////////////////////////////////////////////////////////////////////////////
 //
@@ -254,6 +257,9 @@ void SEEIIR_model<EGraph>::apply_transition(int itran)
     for (typename EGraph::igraph_t::InArcIt arc(egraph.igraph,node); arc!=lemon::INVALID; ++arc)
       compute_rates(egraph.igraph.source(arc));
 }
+
+template<>
+void SEEIIR_model<MWFCGraph>::apply_transition(int itran);
 
 template<typename EGraph>
 void SEEIIR_model<EGraph>::add_imported_infections(Imported_infection* ii)

@@ -11,9 +11,9 @@ sir_sq_SOURCES = sir_sq.cc emodel.cc seir_collector.cc egraph.cc ../qdrandom.cc 
 sir_fc_SOURCES = sir_sq.cc emodel.cc seir_collector.cc egraph.cc ../qdrandom.cc ../geoave.cc
 sir_fc_CPPFLAGS = -DDEBUG_FCGRAPH
 
-seeiir_fc_SOURCES = seeiir_fc.cc emodel.cc seir_collector.cc egraph.cc ../qdrandom.cc ../geoave.cc
+seeiir_fc_SOURCES = seeiir_fc.cc emodel.cc seirmodel.cc seir_collector.cc egraph.cc ../qdrandom.cc ../geoave.cc
 
-seeiir_sq_SOURCES = seeiir_sq.cc emodel.cc seir_collector.cc egraph.cc ../qdrandom.cc ../geoave.cc
+seeiir_sq_SOURCES = seeiir_sq.cc emodel.cc seirmodel.cc seir_collector.cc egraph.cc ../qdrandom.cc ../geoave.cc
 
 EXTRA_DIST = emodel.hh esampler.hh egraph.hh eevents.hh seir_collector.hh
 

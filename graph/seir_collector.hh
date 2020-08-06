@@ -137,6 +137,7 @@ template <typename EGraph>
 void SIRcollector_av<EGraph>::collect(double time)
 {
   typename model_t::aggregate_node *anode=model.anodemap[model.hroot];
+
   Sav.push(time,anode->NS);
   Iav.push(time,anode->NI);
   Rav.push(time,anode->NR);
@@ -352,6 +353,7 @@ void SEEIIRcollector_av<EGraph>::print(std::ostream& o,bool print_time)
     E[1]=E2a[i];
     I[0]=I1a[i];
     I[1]=I2a[i];
+    R[0]=Ra[i];
 
     SEIRcollector_base::print(o,print_time);
     sprintf(buf,"%11.6g %11.6g %11.6g %11.6g %11.6g ",impa[i],closea[i],comma[i],totala[i],RRa[i]);

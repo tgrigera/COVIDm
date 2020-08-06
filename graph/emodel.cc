@@ -59,6 +59,7 @@ void run(Epidemiological_model *model,Sampler* sampler,event_queue_t& events,dou
 
   model->set_all_susceptible();
   model->compute_all_rates();
+
   while (time<=tmax) {
 
     // get transition probability and advance time
@@ -72,7 +73,6 @@ void run(Epidemiological_model *model,Sampler* sampler,event_queue_t& events,dou
       time=levents.front()->time;
       sampler->sample(time);
       if (levents.size()==1) {
-	delete levents.front();
 	levents.pop();
 	break;
       }
