@@ -18,61 +18,78 @@
  *
  */
 
+#include <math.h>
+
 #include "egraph.hh"
+
+///////////////////////////////////////////////////////////////////////////////
+//
+// Graph_base
+
+double Graph_base::arc_weight(Graph_base::arc_t arc)
+{
+  return default_arc_weight;
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 //
 // Fully-connected graph
 
-FCGraph* FCGraph::create(int N)
+FCGraph::FCGraph_ctor_data* FCGraph::create_ctor_data(int N)
 {
+  FCGraph_ctor_data *cdata=new FCGraph_ctor_data;
+  
   // The graph is built copying the structure of a lemon FullGraph
   lemon::FullGraph fcg(N);
-  fgraph_t *fgr = new fgraph_t;
-  lemon::digraphCopy(fcg,*fgr).run();
+  cdata->fg = new fgraph_t;
+  lemon::digraphCopy(fcg,*(cdata->fg)).run();
 
   // Now add the hierarchical (aggregate) node, and the filtered graphs
   // for the individual and hierarchical vision of the structure
-  fgraph_t::ArcMap<bool> *hmap =   // hierarchical graph has same nodes, less arcs
-    new fgraph_t::ArcMap<bool>(*fgr,false);
-  fgraph_t::NodeMap<bool> *imap =   // individual graph has only the individual nodes
-    new fgraph_t::NodeMap<bool>(*fgr,true);
+  cdata->hmap =   // hierarchical graph has same nodes, less arcs
+    new fgraph_t::ArcMap<bool>(*(cdata->fg),false);
+  cdata->imap =   // individual graph has only the individual nodes
+    new fgraph_t::NodeMap<bool>(*(cdata->fg),true);
 
-  fgraph_t::Node hnode=fgr->addNode();
-  (*imap)[hnode]=false;
-  for (fgraph_t::NodeIt inode(*fgr); inode!=lemon::INVALID; ++inode) {
-    if (inode==hnode) continue;
-    auto arc=fgr->addArc(hnode,inode);
-    (*hmap)[arc]=true;
+  cdata->hroot=cdata->fg->addNode();
+  (*(cdata->imap))[cdata->hroot]=false;
+  for (fgraph_t::NodeIt inode(*(cdata->fg)); inode!=lemon::INVALID; ++inode) {
+    if (inode==cdata->hroot) continue;
+    auto arc=cdata->fg->addArc(cdata->hroot,inode);
+    (*(cdata->hmap))[arc]=true;
   }
-  igraph_t *igr = new igraph_t(*fgr,*imap);
-  hgraph_t *hgr = new hgraph_t(*fgr,*hmap);
 
-  return new FCGraph(fgr,igr,hgr,hnode,1./N,hmap,imap);
+  cdata->ig = new igraph_t(*(cdata->fg),*(cdata->imap));
+  cdata->hg = new hgraph_t(*(cdata->fg),*(cdata->hmap));
+
+  return cdata;
 }
 
+///////////////////////////////////////////////////////////////////////////////
 //
-// Random multiplicative weights for the FC grah
+// Weighted FC Graphs
+
+// Multiplicative weights for the FC grah
 //
 // Assigns symmetrical weights to each arc according to J_ij = beta_i * beta_j / A
 // betas are taken from user-provided random distribution betadist() and
 // A= inode_count * beta_scale
 //
-void FCGraph::set_weights_random_multiplicative(double (*betadist)(),double beta_scale)
-{
-  // obtain random betas
-  igraph_t::NodeMap<double> beta(igraph);
-  for (igraph_t::NodeIt node(igraph); node!=lemon::INVALID; ++node) {
-    beta[node]=betadist();
-  }
 
-  // loop over arcs and set weight
-  double aN=beta_scale*inode_count;
-  for (igraph_t::ArcIt arc(igraph); arc!=lemon::INVALID; ++arc) {
-    inode_t i=igraph.source(arc);
-    inode_t j=igraph.target(arc);
-    arcmap[arc] = beta[i]*beta[j]/aN;
+void MWFCGraph::set_weights_random_multiplicative(double (*betadist)(),double beta_scale)
+{
+  double wnorm=sqrt(beta_scale*inode_count);
+  // obtain random betas
+  for (igraph_t::NodeIt node(igraph); node!=lemon::INVALID; ++node) {
+    wfactor[node]=betadist()/wnorm;
   }
+}
+
+double MWFCGraph::arc_weight(arc_t arc)
+{
+  inode_t i=igraph.source(arc);
+  inode_t j=igraph.target(arc);
+  return wfactor[i]*wfactor[j];
 }
 
 

@@ -85,7 +85,7 @@ public:
 
   igraph_t &igraph;               
   hgraph_t &hgraph;
-  double   arc_weight(arc_t arc);
+  virtual  double arc_weight(arc_t arc);
   inode_t  random_inode();
   int      id(node_t);             // returns Lemon's unique id 
   inode_t  inode(int id);          // returns a node referenced by id (obtained through id() method)
@@ -108,7 +108,6 @@ protected:
 
   Uniform_integer                              ran;
   double                                       default_arc_weight;
-  typename igraph_t::template ArcMap<double>   arcmap;
   std::vector<inode_t>                         rangemap;  // must build a custom one because Lemon's does not work with graph adaptors
 
 } ;
@@ -118,8 +117,7 @@ inline Graph_base::Graph_base(fgraph_t* fgraphp,igraph_t* igraphp,hgraph_t* hgra
   fgraphp(fgraphp), igraphp(igraphp), hgraphp(hgraphp),
   fgraph(*fgraphp), igraph(*igraphp), hgraph(*hgraphp),
   hroot(hroot),
-  default_arc_weight(default_arc_weight),
-  arcmap(igraph,default_arc_weight)
+  default_arc_weight(default_arc_weight)
 {
   inode_count=lemon::countNodes(igraph);
   rangemap.reserve(inode_count);
@@ -132,11 +130,6 @@ inline Graph_base::~Graph_base()
   delete fgraphp;
   delete igraphp;
   delete hgraphp;
-}
-
-inline double Graph_base::arc_weight(Graph_base::arc_t arc)
-{
-  return arcmap[arc];
 }
 
 inline int Graph_base::id(Graph_base::inode_t node)
@@ -168,35 +161,77 @@ void Graph_base::for_each_anode(node_t inode,Fun fun)
 
 ///////////////////////////////////////////////////////////////////////////////
 //
-// Fully-connected graph
+// Fully-connected graph and weighted fully-connected graph
 
 class FCGraph : public Graph_base  { 
 public:
   static FCGraph* create(int N);
   ~FCGraph();
-  void set_weights_random_multiplicative(double (*betadist)(),double scale);
+
+protected:
+  struct FCGraph_ctor_data {
+    fgraph_t* fg;
+    igraph_t* ig;
+    hgraph_t *hg;
+    node_t hroot;
+    double def_arc_w;
+    fgraph_t::ArcMap<bool> *hmap;
+    fgraph_t::NodeMap<bool> *imap;
+  } ;
+
+  FCGraph(FCGraph_ctor_data *cdata);
+  static FCGraph_ctor_data* create_ctor_data(int N);
 
 private:
-  FCGraph(fgraph_t* fg,igraph_t* ig,hgraph_t *hg,node_t hroot,double def_arc_w,
-	  fgraph_t::ArcMap<bool> *hmap, fgraph_t::NodeMap<bool> *imap);
-
   fgraph_t::ArcMap<bool>  *hmap;   // hierarchical graph has same nodes, less arcs
   fgraph_t::NodeMap<bool> *imap;  // individual graph has only the individual nodes
   
 } ;
 
-inline FCGraph::FCGraph(fgraph_t* fg,igraph_t* ig,hgraph_t *hg,
-			node_t hroot, double def_arc_w,
-			fgraph_t::ArcMap<bool> *hmap,
-			fgraph_t::NodeMap<bool> *imap) :
-  Graph_base(fg,ig,hg,hroot,def_arc_w),
-  hmap(hmap), imap(imap)
-{}
+inline FCGraph::FCGraph(FCGraph_ctor_data *cdata) :
+  Graph_base(cdata->fg,cdata->ig,cdata->hg,cdata->hroot,cdata->def_arc_w),
+  hmap(cdata->hmap), imap(cdata->imap)
+{
+  delete cdata;
+}
+
+inline FCGraph* FCGraph::create(int N)
+{
+  return new FCGraph(create_ctor_data(N));
+}
 
 inline FCGraph::~FCGraph()
 {
   delete hmap;
   delete imap;
+}
+
+//
+// FC graph with multiplicative weights
+//
+
+class MWFCGraph : public FCGraph {
+public:
+  static MWFCGraph* create(int N);
+  ~MWFCGraph();
+  double arc_weight(arc_t arc);
+  void set_weights_random_multiplicative(double (*betadist)(),double scale);
+
+protected:
+  MWFCGraph(FCGraph_ctor_data *cdata);
+
+private:
+  igraph_t::NodeMap<double> wfactor;
+} ;
+
+inline MWFCGraph::MWFCGraph(FCGraph::FCGraph_ctor_data *cdata) :
+  FCGraph(cdata),
+  wfactor(igraph)
+{}
+
+inline MWFCGraph* MWFCGraph::create(int N)
+{
+  return new MWFCGraph(FCGraph::create_ctor_data(N));
 }
 
 ///////////////////////////////////////////////////////////////////////////////

@@ -47,7 +47,7 @@ struct opt {
   std::string eifile;             // File to read imported infected cases
 
   // rates vs time
-  typedef std::vector<Rate_constant_change<FCGraph>> rates_vs_time_t;
+  typedef std::vector<Rate_constant_change<MWFCGraph>> rates_vs_time_t;
   rates_vs_time_t                           rates_vs_time;
 
   opt() : last_arg_read(0) {}
@@ -159,7 +159,7 @@ void read_rates_vs_time(FILE *f)
     if (sscanf(buf,"%lg %lg %lg %lg %lg %lg",&time,&b,&s1,&s2,&g1,&g2)!=6) {
       std::cerr  << "couldn't read record: " << buf << "\n";
       throw std::runtime_error(strerror(errno));}
-    options.rates_vs_time.push_back(Rate_constant_change<FCGraph>(time,b,s1,s2,g1,g2));
+    options.rates_vs_time.push_back(Rate_constant_change<MWFCGraph>(time,b,s1,s2,g1,g2));
   }
 }
 
@@ -212,7 +212,7 @@ int main(int argc,char* argv[])
   read_parameters(argc,argv);
   Random_number_generator RNG(options.seed);
 
-  FCGraph* egraph = FCGraph::create(options.Nnodes);
+  MWFCGraph* egraph = MWFCGraph::create(options.Nnodes);
 
   switch (options.beta_distribution) {
   case opt::exp:
@@ -220,12 +220,11 @@ int main(int argc,char* argv[])
     break;
   }
 
-  SEEIIR_model<FCGraph> SEEIIR(*egraph);
-  SEEIIRcollector<FCGraph> *collector =
+  SEEIIR_model<MWFCGraph> SEEIIR(*egraph);
+  SEEIIRcollector<MWFCGraph> *collector =
     options.Nruns > 1 ?
-    new SEEIIRcollector_av<FCGraph>(SEEIIR,1.) :
-    new SEEIIRcollector<FCGraph>(SEEIIR);
-
+    new SEEIIRcollector_av<MWFCGraph>(SEEIIR,1.) :
+    new SEEIIRcollector<MWFCGraph>(SEEIIR);
   
   std::cout << collector->header() << '\n';
   for (int n=0; n<options.Nruns; ++n) {
