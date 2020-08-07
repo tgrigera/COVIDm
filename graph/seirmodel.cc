@@ -36,7 +36,7 @@ void SEEIIR_model<MWFCGraph>::apply_transition(int itran)
     noded.state=SEEIIR_node::E1;
     egraph.for_each_anode(node,
 			  [this](MWFCGraph::node_t hnode) ->void
-			  {aggregate_data* anode=this->anodemap[hnode]; anode->NS--; anode->NE1++;} );
+			  {aggregate_data* anode=this->anodemap[hnode]; anode->NS--; anode->NE1++; anode->Eacc++;} );
     break;
 
   case SEEIIR_node::E1:

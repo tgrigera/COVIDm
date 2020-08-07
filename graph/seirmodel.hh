@@ -55,6 +55,7 @@ public:
     int NS,NE1,NE2,NI1,NI2,NR;
     int inf_accum;
     int inf_imported,inf_close,inf_community;
+    int Eacc;
   } ;
 
   typename EGraph::node_t   hroot;
@@ -125,6 +126,7 @@ void SEEIIR_model<EGraph>::recompute_counts(typename EGraph::node_t lroot)
   }
   anode->NS=anode->NE1=anode->NE2=anode->NI1=anode->NI2=anode->NR=0;
   anode->inf_accum=anode->inf_imported=anode->inf_close=anode->inf_community=0;
+  anode->Eacc=0;
   anode->Ntot=0;
   for (typename EGraph::hgraph_t::OutArcIt arc(egraph.hgraph,lroot); arc!=lemon::INVALID; ++arc) {
     auto lnode=egraph.hgraph.target(arc);
@@ -206,13 +208,13 @@ void SEEIIR_model<EGraph>::apply_transition(int itran)
   auto node=egraph.inode(transitions[itran].nodeid);
   auto &noded=inodemap[node];
   bool need_recomp=false;
-  
+
   switch(noded.state) {
   case SEEIIR_node::S:
     noded.state=SEEIIR_node::E1;
     egraph.for_each_anode(node,
 			  [this](typename EGraph::node_t hnode) ->void
-			  {aggregate_data* anode=this->anodemap[hnode]; anode->NS--; anode->NE1++;} );
+			  {aggregate_data* anode=this->anodemap[hnode]; anode->NS--; anode->NE1++; anode->Eacc++;} );
     break;
 
   case SEEIIR_node::E1:

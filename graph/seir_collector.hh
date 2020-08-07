@@ -178,7 +178,8 @@ public:
     SEIRcollector_base(1,2,2,1),
     model(model),
     time0(0),
-    inf_accum0(0)
+    I0(0),
+    Eacc0(0)
   {}
   const char* header();
   void print(std::ostream&,bool print_time=true);
@@ -189,7 +190,7 @@ protected:
 
 private:
   double time0;
-  int    inf_accum0;
+  int    I0,Eacc0;
 } ;
 
 template <typename EGraph>
@@ -223,13 +224,14 @@ void SEEIIRcollector<EGraph>::print(std::ostream& o,bool print_time)
   R[0]=anode->NR;
   SEIRcollector_base::print(o,print_time);
 
-  double RR = model.tinf() * (anode->inf_accum-inf_accum0)/( (time-time0) * (I[0]+I[1]) );
+  double RR = model.tinf() * (anode->Eacc-Eacc0)/( (time-time0) * I0 );
   time0=time;
-  inf_accum0=anode->inf_accum;
+  Eacc0=anode->Eacc;
+  I0=anode->NI1+anode->NI2;
 
   char buf[500];
   sprintf(buf,"%11d %11d %11d %11d %11.6g",anode->inf_imported,anode->inf_close,anode->inf_community,anode->inf_accum,RR);
-  std::cout << buf << '\n';
+  std::cout << buf;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -256,7 +258,7 @@ public:
     Totalinf(-0.5*deltat,1.,deltat),
     RR(-0.5*deltat,1.,deltat),
     time0(0),
-    inf_accum0(0),
+    I0(0), Eacc0(0),
     hdr(SEIRcollector_base::hdr)
   {}
 
@@ -267,7 +269,7 @@ public:
 private:
   Geoave Sav,E1av,E2av,I1av,I2av,Rav,Impav,Closeav,Commav,Nav,Totalinf,RR;
   double time0;
-  int    inf_accum0;
+  int    I0,Eacc0;
 
   std::string &hdr;
   using SEIRcollector_base::time;
@@ -320,11 +322,11 @@ void SEEIIRcollector_av<EGraph>::collect(double time_)
   I[1]=anode->NI2;
   R[0]=anode->NR;
 
-  double RRi = model.tinf() * (anode->inf_accum-inf_accum0)/( (time-time0) * (I[0]+I[1]) );
+  double RRi = model.tinf() * (anode->Eacc-Eacc0)/( (time-time0) * I0 );
   time0=time;
-  inf_accum0=anode->inf_accum;
+  Eacc0=anode->Eacc;
+  I0=anode->NI1+anode->NI2;
   RR.push(time,RRi);
-
 }
 
 template <typename EGraph>
