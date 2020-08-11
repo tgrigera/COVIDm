@@ -11,7 +11,8 @@ AC_CONFIG_SRCDIR([qdrandom.cc])
 AC_CONFIG_HEADERS([config.h])
 AC_LANG(C++)
 AC_CONFIG_MACRO_DIR([m4])
-AM_INIT_AUTOMAKE
+# AM_INIT_AUTOMAKE([subdir-objects silent-rules])
+AM_INIT_AUTOMAKE([silent-rules])
 
 # Checks for programs.
 AC_PROG_MAKE_SET

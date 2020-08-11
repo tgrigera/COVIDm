@@ -28,12 +28,12 @@
 
 Graph_base::~Graph_base()
 {
-  delete fgraphp;
   delete igraphp;
   delete hgraphp;
+  delete fgraphp;
 }
 
-double Graph_base::arc_weight(Graph_base::arc_t arc)
+double Graph_base::arc_weight(Graph_base::iarc_t arc)
 {
   return default_arc_weight;
 }
@@ -42,41 +42,64 @@ double Graph_base::arc_weight(Graph_base::arc_t arc)
 //
 // Fully-connected graph
 
+// FCGraph::FCGraph_ctor_data* FCGraph::create_ctor_data(int N)
+// {
+//   FCGraph_ctor_data *cdata=new FCGraph_ctor_data;
+  
+//   // The graph is built copying the structure of a lemon FullGraph
+//   lemon::FullGraph fcg(N);
+//   cdata->fg = new fgraph_t;
+//   lemon::digraphCopy(fcg,*(cdata->fg)).run();
+
+//   // Now add the hierarchical (aggregate) node, and the filtered graphs
+//   // for the individual and hierarchical vision of the structure
+//   cdata->hmap =   // hierarchical graph has same nodes, less arcs
+//     new fgraph_t::ArcMap<bool>(*(cdata->fg),false);
+//   cdata->imap =   // individual graph has only the individual nodes
+//     new fgraph_t::NodeMap<bool>(*(cdata->fg),true);
+
+//   cdata->hroot=cdata->fg->addNode();
+//   (*(cdata->imap))[cdata->hroot]=false;
+//   for (fgraph_t::NodeIt inode(*(cdata->fg)); inode!=lemon::INVALID; ++inode) {
+//     if (inode==cdata->hroot) continue;
+//     auto arc=cdata->fg->addArc(cdata->hroot,inode);
+//     (*(cdata->hmap))[arc]=true;
+//   }
+
+//   cdata->ig = new igraph_t(*(cdata->fg),*(cdata->imap));
+//   cdata->hg = new hgraph_t(*(cdata->fg),*(cdata->hmap));
+
+//   return cdata;
+// }
+
 FCGraph::FCGraph_ctor_data* FCGraph::create_ctor_data(int N)
 {
   FCGraph_ctor_data *cdata=new FCGraph_ctor_data;
   
-  // The graph is built copying the structure of a lemon FullGraph
-  lemon::FullGraph fcg(N);
-  cdata->fg = new fgraph_t;
-  lemon::digraphCopy(fcg,*(cdata->fg)).run();
-
-  // Now add the hierarchical (aggregate) node, and the filtered graphs
-  // for the individual and hierarchical vision of the structure
-  cdata->hmap =   // hierarchical graph has same nodes, less arcs
-    new fgraph_t::ArcMap<bool>(*(cdata->fg),false);
-  cdata->imap =   // individual graph has only the individual nodes
-    new fgraph_t::NodeMap<bool>(*(cdata->fg),true);
-
-  cdata->hroot=cdata->fg->addNode();
-  (*(cdata->imap))[cdata->hroot]=false;
-  for (fgraph_t::NodeIt inode(*(cdata->fg)); inode!=lemon::INVALID; ++inode) {
-    if (inode==cdata->hroot) continue;
-    auto arc=cdata->fg->addArc(cdata->hroot,inode);
-    (*(cdata->hmap))[arc]=true;
-  }
-
-  cdata->ig = new igraph_t(*(cdata->fg),*(cdata->imap));
-  cdata->hg = new hgraph_t(*(cdata->fg),*(cdata->hmap));
+  cdata->ig = new igraph_t(N);
+  cdata->hg = new hgraph_t;
+  cdata->hroot=cdata->hg->addNode();
+  cdata->def_arc_w=1;
 
   return cdata;
 }
 
 FCGraph::~FCGraph()
 {
-  delete hmap;
-  delete imap;
+  delete igraphp;
+  delete hgraphp;
 }
+
+double FCGraph::arc_weight(iarc_t arc)
+{
+  return default_arc_weight;
+}
+
+// FCGraph::~FCGraph()
+// {
+//   delete hmap;
+//   delete imap;
+// }
 
 ///////////////////////////////////////////////////////////////////////////////
 //
@@ -98,7 +121,7 @@ void MWFCGraph::set_weights_random_multiplicative(double (*betadist)(),double be
   }
 }
 
-double MWFCGraph::arc_weight(arc_t arc)
+double MWFCGraph::arc_weight(iarc_t arc)
 {
   inode_t i=igraph.source(arc);
   inode_t j=igraph.target(arc);
@@ -135,6 +158,12 @@ SQGraph* SQGraph::create(int Lx,int Ly)
   hgraph_t *hgr = new hgraph_t(*fgr,*hmap);
  
   return new SQGraph(fgr,igr,hgr,hnode,1.,hmap,imap);
+}
+
+SQGraph::~SQGraph()
+{
+  delete hmap;
+  delete imap;
 }
 
 ///////////////////////////////////////////////////////////////////////////////

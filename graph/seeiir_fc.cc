@@ -212,20 +212,24 @@ int main(int argc,char* argv[])
   read_parameters(argc,argv);
   Random_number_generator RNG(options.seed);
 
+  std::cerr << "# Building graph...\n";
   MWFCGraph* egraph = MWFCGraph::create(options.Nnodes);
 
+  std::cerr << "#      ...setting weights\n";
   switch (options.beta_distribution) {
   case opt::exp:
     egraph->set_weights_random_multiplicative(beta_from_exp_dist,options.exp_mu);
     break;
   }
 
+  std::cerr << "# Additional setup...\n";
   SEEIIR_model<MWFCGraph> *SEEIIR = new SEEIIR_model<MWFCGraph>(*egraph);
   SEEIIRcollector<MWFCGraph> *collector =
     options.Nruns > 1 ?
     new SEEIIRcollector_av<MWFCGraph>(*SEEIIR,1.) :
     new SEEIIRcollector<MWFCGraph>(*SEEIIR);
   
+  std::cerr << "# Starting run\n";
   std::cout << collector->header() << '\n';
   for (int n=0; n<options.Nruns; ++n) {
     merge_events();

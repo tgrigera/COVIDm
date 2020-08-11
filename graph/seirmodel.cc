@@ -35,21 +35,21 @@ void SEEIIR_model<MWFCGraph>::apply_transition(int itran)
   case SEEIIR_node::S:
     noded.state=SEEIIR_node::E1;
     egraph.for_each_anode(node,
-			  [this](MWFCGraph::node_t hnode) ->void
+			  [this](MWFCGraph::hnode_t hnode) ->void
 			  {aggregate_data* anode=this->anodemap[hnode]; anode->NS--; anode->NE1++; anode->Eacc++;} );
     break;
 
   case SEEIIR_node::E1:
     noded.state=SEEIIR_node::E2;
     egraph.for_each_anode(node,
-			  [this](MWFCGraph::node_t hnode) ->void
+			  [this](MWFCGraph::hnode_t hnode) ->void
 			  {aggregate_data* anode=this->anodemap[hnode]; anode->NE1--; anode->NE2++;} );
     break;
 
   case SEEIIR_node::E2:
     noded.state=SEEIIR_node::I1;
     egraph.for_each_anode(node,
-			  [this](MWFCGraph::node_t hnode) ->void
+			  [this](MWFCGraph::hnode_t hnode) ->void
 			  {aggregate_data* anode=this->anodemap[hnode]; anode->inf_accum++; anode->inf_close++; anode->NE2--; anode->NI1++;} );
     need_recomp=new_infection;
     break;
@@ -57,14 +57,14 @@ void SEEIIR_model<MWFCGraph>::apply_transition(int itran)
   case SEEIIR_node::I1:
     noded.state=SEEIIR_node::I2;
     egraph.for_each_anode(node,
-			  [this](MWFCGraph::node_t hnode) ->void
+			  [this](MWFCGraph::hnode_t hnode) ->void
 			  {aggregate_data* anode=this->anodemap[hnode]; anode->NI1--; anode->NI2++;} );
     break;
 
   case SEEIIR_node::I2:
     noded.state=SEEIIR_node::R;
     egraph.for_each_anode(node,
-			  [this](MWFCGraph::node_t hnode) ->void
+			  [this](MWFCGraph::hnode_t hnode) ->void
 			  {aggregate_data* anode=this->anodemap[hnode]; anode->NI2--; anode->NR++;} );
     need_recomp=new_recovery;
     break;

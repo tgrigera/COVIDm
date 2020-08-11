@@ -58,7 +58,7 @@ public:
     int Eacc;
   } ;
 
-  typename EGraph::node_t   hroot;
+  typename EGraph::hnode_t   hroot;
   typename EGraph::hgraph_t::template NodeMap<aggregate_data*> anodemap;
 
 private:
@@ -68,7 +68,8 @@ private:
   using Epidemiological_model_graph_base<EGraph>::egraph;
   using Epidemiological_model_graph_base<EGraph>::transitions;
 
-  void recompute_counts(typename EGraph::node_t);
+  void init_htree(typename EGraph::hnode_t lroot);
+  void recompute_counts();
 } ;
 
 template<typename EGraph>
@@ -85,6 +86,7 @@ SEEIIR_model<EGraph>::SEEIIR_model(EGraph& egraph) :
     Epidemiological_model::transition tr={egraph.id(inode),0,0};
     transitions.push_back(tr);
   }
+  set_rate_constants(1.,1.,1.,1.,1.);
 }
 
 template<typename EGraph>
@@ -100,7 +102,7 @@ void SEEIIR_model<EGraph>::set_all_susceptible()
   for (typename EGraph::igraph_t::NodeIt inode(egraph.igraph); inode!=lemon::INVALID; ++inode) {
     inodemap[inode].state=SEEIIR_node::S;
   }
-  recompute_counts(egraph.hroot);
+  recompute_counts();
 
   assert(anodemap[hroot]->NS==egraph.inode_count);
 }
@@ -116,54 +118,75 @@ inline void SEEIIR_model<EGraph>::set_rate_constants(double beta_,double sigma1_
   gamma2=gamma2_;
 }
 
+//
+// NOTE: for compelx hierarcical graphs, it is probably worth rewriting the following so that
+// only the lowest-lying anodes are updated from the inodes, and then the rest is done recursively
+// from the root.  This would save some addition operations and speed up somewhat for very big
+// graphs
+
 template<typename EGraph>
-void SEEIIR_model<EGraph>::recompute_counts(typename EGraph::node_t lroot)
+void SEEIIR_model<EGraph>::recompute_counts()
+{
+  init_htree(hroot);
+  for (typename EGraph::igraph_t::NodeIt inode(egraph.igraph); inode!=lemon::INVALID; ++inode) {
+    switch(inodemap[inode].state) {
+      case SEEIIR_node::S:
+	egraph.for_each_anode(inode,
+			      [this](typename EGraph::hnode_t hnode) ->void
+			      {aggregate_data* anode=this->anodemap[hnode]; anode->Ntot++; anode->NS++;} );
+	break;
+      case SEEIIR_node::E1:
+	egraph.for_each_anode(inode,
+			      [this](typename EGraph::hnode_t hnode) ->void
+			      {aggregate_data* anode=this->anodemap[hnode]; anode->Ntot++; anode->NE1++;} );
+	break;
+      case SEEIIR_node::E2:
+	egraph.for_each_anode(inode,
+			      [this](typename EGraph::hnode_t hnode) ->void
+			      {aggregate_data* anode=this->anodemap[hnode]; anode->Ntot++; anode->NE2++;} );
+	break;
+      case SEEIIR_node::I1:
+	egraph.for_each_anode(inode,
+			      [this](typename EGraph::hnode_t hnode) ->void
+			      {aggregate_data* anode=this->anodemap[hnode]; anode->Ntot++; anode->NI1++;} );
+	break;
+      case SEEIIR_node::I2:
+	egraph.for_each_anode(inode,
+			      [this](typename EGraph::hnode_t hnode) ->void
+			      {aggregate_data* anode=this->anodemap[hnode]; anode->Ntot++; anode->NI2++;} );
+	break;
+      case SEEIIR_node::R:
+	egraph.for_each_anode(inode,
+			      [this](typename EGraph::hnode_t hnode) ->void
+			      {aggregate_data* anode=this->anodemap[hnode]; anode->Ntot++; anode->NR++;} );
+	break;
+    }
+  }
+}
+
+template<typename EGraph>
+void SEEIIR_model<EGraph>::init_htree(typename EGraph::hnode_t lroot)
 {
   aggregate_data* anode=anodemap[lroot];
   if (anode==0) {
     anode=new aggregate_data;
     anodemap[lroot]=anode;
   }
-  anode->NS=anode->NE1=anode->NE2=anode->NI1=anode->NI2=anode->NR=0;
+  anode->Ntot=0;
+  anode->NS=0;
+  anode->NE1=0;
+  anode->NE2=0;
+  anode->NI1=0;
+  anode->NI2=0;
+  anode->NR=0;
   anode->inf_accum=anode->inf_imported=anode->inf_close=anode->inf_community=0;
   anode->Eacc=0;
-  anode->Ntot=0;
   for (typename EGraph::hgraph_t::OutArcIt arc(egraph.hgraph,lroot); arc!=lemon::INVALID; ++arc) {
     auto lnode=egraph.hgraph.target(arc);
-    if (countOutArcs(egraph.hgraph,lnode)>0) {
-      recompute_counts(lnode);
-      anode->Ntot+=anodemap[lnode]->Ntot;
-      anode->NS+=anodemap[lnode]->NS;
-      anode->NE1+=anodemap[lnode]->NE1;
-      anode->NE2+=anodemap[lnode]->NE2;
-      anode->NI1+=anodemap[lnode]->NI1;
-      anode->NI2+=anodemap[lnode]->NI2;
-      anode->NR+=anodemap[lnode]->NR;
-    } else {
-      anode->Ntot++;
-      switch(inodemap[lnode].state) {
-      case SEEIIR_node::S:
-	anode->NS++;
-	break;
-      case SEEIIR_node::E1:
-	anode->NE1++;
-	break;
-      case SEEIIR_node::E2:
-	anode->NE2++;
-	break;
-      case SEEIIR_node::I1:
-	anode->NI1++;
-	break;
-      case SEEIIR_node::I2:
-	anode->NI2++;
-	break;
-      case SEEIIR_node::R:
-	anode->NR++;
-	break;
-      }
-    }
+    init_htree(lnode);
   }
 }
+
 
 template<typename EGraph>
 void SEEIIR_model<EGraph>::compute_rates(typename EGraph::igraph_t::Node node)
@@ -213,21 +236,21 @@ void SEEIIR_model<EGraph>::apply_transition(int itran)
   case SEEIIR_node::S:
     noded.state=SEEIIR_node::E1;
     egraph.for_each_anode(node,
-			  [this](typename EGraph::node_t hnode) ->void
+			  [this](typename EGraph::hnode_t hnode) ->void
 			  {aggregate_data* anode=this->anodemap[hnode]; anode->NS--; anode->NE1++; anode->Eacc++;} );
     break;
 
   case SEEIIR_node::E1:
     noded.state=SEEIIR_node::E2;
     egraph.for_each_anode(node,
-			  [this](typename EGraph::node_t hnode) ->void
+			  [this](typename EGraph::hnode_t hnode) ->void
 			  {aggregate_data* anode=this->anodemap[hnode]; anode->NE1--; anode->NE2++;} );
     break;
 
   case SEEIIR_node::E2:
     noded.state=SEEIIR_node::I1;
     egraph.for_each_anode(node,
-			  [this](typename EGraph::node_t hnode) ->void
+			  [this](typename EGraph::hnode_t hnode) ->void
 			  {aggregate_data* anode=this->anodemap[hnode]; anode->inf_accum++; anode->inf_close++; anode->NE2--; anode->NI1++;} );
     need_recomp=true;
     break;
@@ -235,14 +258,14 @@ void SEEIIR_model<EGraph>::apply_transition(int itran)
   case SEEIIR_node::I1:
     noded.state=SEEIIR_node::I2;
     egraph.for_each_anode(node,
-			  [this](typename EGraph::node_t hnode) ->void
+			  [this](typename EGraph::hnode_t hnode) ->void
 			  {aggregate_data* anode=this->anodemap[hnode]; anode->NI1--; anode->NI2++;} );
     break;
 
   case SEEIIR_node::I2:
     noded.state=SEEIIR_node::R;
     egraph.for_each_anode(node,
-			  [this](typename EGraph::node_t hnode) ->void
+			  [this](typename EGraph::hnode_t hnode) ->void
 			  {aggregate_data* anode=this->anodemap[hnode]; anode->NI2--; anode->NR++;} );
     need_recomp=true;
     break;
@@ -274,7 +297,7 @@ void SEEIIR_model<EGraph>::add_imported_infections(Imported_infection* ii)
     do node=egraph.random_inode(); while(inodemap[node].state!=SEEIIR_node::S);
     inodemap[node].state=SEEIIR_node::I1;
     egraph.for_each_anode(node,
-		   [this](typename EGraph::node_t hnode)
+		   [this](typename EGraph::hnode_t hnode)
 		   {aggregate_data* anode=this->anodemap[hnode];
 		     anode->NS--; anode->NI1++; anode->inf_imported++; anode->inf_accum++; }  );
     compute_rates(node);

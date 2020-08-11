@@ -104,27 +104,37 @@ int main(int argc,char* argv[])
 
 #ifdef DEBUG_FCGRAPH
   FCGraph* egraph = FCGraph::create(options.Lx*options.Ly);
-  SIR_model<FCGraph> SIR(*egraph);
-  SIRcollector_av<FCGraph> collector(SIR);
 #else
   SQGraph* egraph = SQGraph::create(options.Lx,options.Ly);
-  SIR_model<SQGraph> SIR(*egraph);
-  SIRcollector_av<SQGraph> collector(SIR);
 #endif
-  SIR.set_beta(options.beta);
-  SIR.set_gamma(options.gamma);
 
-  event_queue_t events;
-  events.push(new Imported_infection(1,options.I0));
+  { // open scope so that SIR_model object is destroyed before calling
+    // delete on the graph
+    
+#ifdef DEBUG_FCGRAPH
+    SIR_model<FCGraph> SIR(*egraph);
+    SIRcollector_av<FCGraph> collector(SIR);
+#else
+    SIR_model<SQGraph> SIR(*egraph);
+    SIRcollector_av<SQGraph> collector(SIR);
+#endif
+    SIR.set_beta(options.beta);
+    SIR.set_gamma(options.gamma);
 
-  std::cout << collector.header() << '\n';
-  for (int n=0; n<options.Nruns; ++n) {
-    Sampler *sampler = options.Nruns>1 ?
-      static_cast<Sampler*>( new Gillespie_sampler(0,options.steps,1.,&collector)  ) :
-      new Passthrough_sampler(0,options.steps,&collector) ;
-    run(&SIR,sampler,events,options.steps);
-    delete sampler;
+    event_queue_t events;
+    Imported_infection iinf(1,options.I0);
+    events.push(&iinf);
+
+    std::cout << collector.header() << '\n';
+    for (int n=0; n<options.Nruns; ++n) {
+      Sampler *sampler = options.Nruns>1 ?
+	static_cast<Sampler*>( new Gillespie_sampler(0,options.steps,1.,&collector)  ) :
+	new Passthrough_sampler(0,options.steps,&collector) ;
+      run(&SIR,sampler,events,options.steps);
+      delete sampler;
+    }
+    std::cout << collector;
   }
-  std::cout << collector;
-
+  
+  delete egraph;
 }

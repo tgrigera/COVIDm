@@ -38,6 +38,7 @@ template<typename EGraph>
 class SIR_model : public Epidemiological_model_graph_base<EGraph> {
 public:
   SIR_model(EGraph&);
+  ~SIR_model();
   void set_all_susceptible();
   void apply_transition(int);
   void compute_rates(typename EGraph::igraph_t::Node);
@@ -54,7 +55,7 @@ public:
     int  NS,NI,NR;
   } ;
 
-  typename EGraph::node_t   hroot;
+  typename EGraph::hnode_t   hroot;
   typename EGraph::hgraph_t::template NodeMap<aggregate_node*> anodemap;
   
 
@@ -65,7 +66,8 @@ private:
   using Epidemiological_model_graph_base<EGraph>::egraph;
   using Epidemiological_model_graph_base<EGraph>::transitions;
 
-  void recompute_counts(typename EGraph::node_t);
+  void recompute_counts();
+  void init_htree(typename EGraph::hnode_t lroot);
 } ;
 
 template<typename EGraph>
@@ -85,47 +87,96 @@ SIR_model<EGraph>::SIR_model(EGraph& egraph) :
 }
 
 template<typename EGraph>
+SIR_model<EGraph>::~SIR_model()
+{
+  for (typename EGraph::hgraph_t::NodeIt hnode(egraph.hgraph); hnode!=lemon::INVALID; ++hnode) {
+    aggregate_node* anode=anodemap[hnode];
+    delete anode;
+  }
+}
+
+template<typename EGraph>
 void SIR_model<EGraph>::set_all_susceptible()
 {
   for (typename EGraph::igraph_t::NodeIt inode(egraph.igraph); inode!=lemon::INVALID; ++inode) {
     inodemap[inode].state=SIR_node::S;
   }
-  recompute_counts(egraph.hroot);
-
+  recompute_counts();
   assert(anodemap[hroot]->NS==egraph.inode_count);
 }
 
 template<typename EGraph>
-void SIR_model<EGraph>::recompute_counts(typename EGraph::node_t lroot)
+void SIR_model<EGraph>::recompute_counts()
+{
+  init_htree(hroot);
+  for (typename EGraph::igraph_t::NodeIt inode(egraph.igraph); inode!=lemon::INVALID; ++inode) {
+    switch(inodemap[inode].state) {
+      case SIR_node::S:
+	egraph.for_each_anode(inode,
+			      [this](typename EGraph::hnode_t hnode) ->void
+			      {aggregate_node* anode=this->anodemap[hnode]; anode->NS++;} );
+	break;
+      case SIR_node::I:
+	egraph.for_each_anode(inode,
+			      [this](typename EGraph::hnode_t hnode) ->void
+			      {aggregate_node* anode=this->anodemap[hnode]; anode->NI++;} );
+	break;
+      case SIR_node::R:
+	egraph.for_each_anode(inode,
+			      [this](typename EGraph::hnode_t hnode) ->void
+			      {aggregate_node* anode=this->anodemap[hnode]; anode->NR++;} );
+	break;
+    }
+  }
+}
+
+template<typename EGraph>
+void SIR_model<EGraph>::init_htree(typename EGraph::hnode_t lroot)
 {
   aggregate_node* anode=anodemap[lroot];
   if (anode==0) {
     anode=new aggregate_node;
     anodemap[lroot]=anode;
   }
-  anode->NS=anode->NI=anode->NR=0;
+  anode->NS=0;
+  anode->NI=0;
+  anode->NR=0;
   for (typename EGraph::hgraph_t::OutArcIt arc(egraph.hgraph,lroot); arc!=lemon::INVALID; ++arc) {
     auto lnode=egraph.hgraph.target(arc);
-    if (countOutArcs(egraph.hgraph,lnode)>0) {
-      recompute_counts(lnode);
-      anode->NS+=anodemap[lnode]->NS;
-      anode->NI+=anodemap[lnode]->NI;
-      anode->NR+=anodemap[lnode]->NR;
-    } else {
-      switch(inodemap[lnode].state) {
-      case SIR_node::S:
-	anode->NS++;
-	break;
-      case SIR_node::I:
-	anode->NI++;
-	break;
-      case SIR_node::R:
-	anode->NR++;
-	break;
-      }
-    }
+    init_htree(lnode);
   }
 }
+
+// void SIR_model<EGraph>::recompute_counts(typename EGraph::hnode_t lroot)
+// {
+//   aggregate_node* anode=anodemap[lroot];
+//   if (anode==0) {
+//     anode=new aggregate_node;
+//     anodemap[lroot]=anode;
+//   }
+//   anode->NS=anode->NI=anode->NR=0;
+//   for (typename EGraph::hgraph_t::OutArcIt arc(egraph.hgraph,lroot); arc!=lemon::INVALID; ++arc) {
+//     auto lnode=egraph.hgraph.target(arc);
+//     if (countOutArcs(egraph.hgraph,lnode)>0) {
+//       recompute_counts(lnode);
+//       anode->NS+=anodemap[lnode]->NS;
+//       anode->NI+=anodemap[lnode]->NI;
+//       anode->NR+=anodemap[lnode]->NR;
+//     } else {
+//       switch(inodemap[lnode].state) {
+//       case SIR_node::S:
+// 	anode->NS++;
+// 	break;
+//       case SIR_node::I:
+// 	anode->NI++;
+// 	break;
+//       case SIR_node::R:
+// 	anode->NR++;
+// 	break;
+//       }
+//     }
+//   }
+// }
 
 template<typename EGraph>
 void SIR_model<EGraph>::compute_rates(typename EGraph::igraph_t::Node node)
@@ -162,14 +213,14 @@ void SIR_model<EGraph>::apply_transition(int itran)
   case SIR_node::S:
     noded.state=SIR_node::I;
     egraph.for_each_anode(node,
-			  [this](typename EGraph::node_t hnode) ->void
+			  [this](typename EGraph::hnode_t hnode) ->void
 			  {aggregate_node* anode=this->anodemap[hnode]; anode->NS--; anode->NI++;}    );
     break;
 
   case SIR_node::I:
     noded.state=SIR_node::R;
     egraph.for_each_anode(node,
-		   [this](typename EGraph::node_t hnode)
+		   [this](typename EGraph::hnode_t hnode)
 		   {aggregate_node* anode=this->anodemap[hnode]; anode->NI--; anode->NR++;}    );
     break;
 
@@ -194,7 +245,7 @@ void SIR_model<EGraph>::add_imported_infections(Imported_infection* ii)
     do node=egraph.random_inode(); while(inodemap[node].state!=SIR_node::S);
     inodemap[node].state=SIR_node::I;
     egraph.for_each_anode(node,
-		   [this](typename EGraph::node_t hnode)
+		   [this](typename EGraph::hnode_t hnode)
 		   {aggregate_node* anode=this->anodemap[hnode]; anode->NS--; anode->NI++;}    );
     compute_rates(node);
     for (typename EGraph::igraph_t::InArcIt arc(egraph.igraph,node); arc!=lemon::INVALID; ++arc)
