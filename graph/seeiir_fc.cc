@@ -34,6 +34,7 @@ struct opt {
   char   *ifile;
   int    Nruns;
   int    steps;
+  double deltat;
   long   seed;
 
   int    Nnodes;
@@ -50,11 +51,11 @@ struct opt {
   typedef std::vector<Rate_constant_change<MWFCGraph>> rates_vs_time_t;
   rates_vs_time_t                           rates_vs_time;
 
-  opt() : last_arg_read(0) {}
+  opt() : last_arg_read(0), deltat(1.) {}
 
 } options;
 
-static int nargs=4;
+static int nargs=5;
 
 ///////////////////////////////////////////////////////////////////////////////
 //
@@ -65,7 +66,7 @@ static int nargs=4;
 
 void show_usage(char *prog)
 {
-  std::cerr << "usage: " << prog << " parameterfile seed steps Nruns\n\n";
+  std::cerr << "usage: " << prog << " parameterfile seed steps Nruns delta_t\n\n";
   exit(1);
 }
 
@@ -90,6 +91,7 @@ void read_parameters(int argc,char *argv[])
   read_arg(argv,options.seed);
   read_arg(argv,options.steps);
   read_arg(argv,options.Nruns);
+  read_arg(argv,options.deltat);
 
   FILE *f=fopen(options.ifile,"r");
   if (f==0) throw std::runtime_error(strerror(errno));
@@ -226,14 +228,14 @@ int main(int argc,char* argv[])
   SEEIIR_model<MWFCGraph> *SEEIIR = new SEEIIR_model<MWFCGraph>(*egraph);
   SEEIIRcollector<MWFCGraph> *collector =
     options.Nruns > 1 ?
-    new SEEIIRcollector_av<MWFCGraph>(*SEEIIR,1.) :
+    new SEEIIRcollector_av<MWFCGraph>(*SEEIIR,options.deltat) :
     new SEEIIRcollector<MWFCGraph>(*SEEIIR);
   
   std::cerr << "# Starting run\n";
   std::cout << collector->header() << '\n';
   for (int n=0; n<options.Nruns; ++n) {
     merge_events();
-    Sampler *sampler =  new Gillespie_sampler(0,options.steps,1.,collector);
+    Sampler *sampler =  new Gillespie_sampler(0,options.steps,options.deltat,collector);
     run(SEEIIR,sampler,event_queue,options.steps);
     delete sampler;
   }
