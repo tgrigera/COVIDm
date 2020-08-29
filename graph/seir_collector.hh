@@ -257,6 +257,7 @@ public:
     Nav(-0.5*deltat,1.,deltat),
     Totalinf(-0.5*deltat,1.,deltat),
     RR(-0.5*deltat,1.,deltat),
+    Eacc(-0.5*deltat,1.,deltat),
     time0(0),
     I0(0), Eacc0(0),
     hdr(SEIRcollector_base::hdr)
