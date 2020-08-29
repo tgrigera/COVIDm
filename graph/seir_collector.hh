@@ -267,7 +267,7 @@ public:
   void collect(double time);
 
 private:
-  Geoave Sav,E1av,E2av,I1av,I2av,Rav,Impav,Closeav,Commav,Nav,Totalinf,RR;
+  Geoave Sav,E1av,E2av,I1av,I2av,Rav,Impav,Closeav,Commav,Nav,Totalinf,RR,Eacc;
   double time0;
   int    I0,Eacc0;
 
@@ -314,6 +314,7 @@ void SEEIIRcollector_av<EGraph>::collect(double time_)
   Closeav.push(time,anode->inf_close);
   Commav.push(time,anode->inf_community);
   Totalinf.push(time,anode->inf_accum);
+  Eacc.push(time,anode->Eacc);
 
   S[0]=anode->NS;
   E[0]=anode->NE1;
@@ -333,7 +334,7 @@ template <typename EGraph>
 void SEEIIRcollector_av<EGraph>::print(std::ostream& o,bool print_time)
 {
   std::vector<double> tim,Sa,Sv,E1a,E1v,E2a,E2v,I1a,I1v,I2a,I2v,Ra,Rv,
-    impa,impv,closea,closev,comma,commv,totala,totalv,Na,Nv,RRa,RRv;
+    impa,impv,closea,closev,comma,commv,totala,totalv,Na,Nv,RRa,RRv,Eacca,Eaccv;
   Nav.get_aves(tim,Na,Nv);
   Sav.get_aves(tim,Sa,Sv);
   E1av.get_aves(tim,E1a,E1v);
@@ -346,6 +347,7 @@ void SEEIIRcollector_av<EGraph>::print(std::ostream& o,bool print_time)
   Commav.get_aves(tim,comma,commv);
   Totalinf.get_aves(tim,totala,totalv);
   RR.get_aves(tim,RRa,RRv);
+  Eacc.get_aves(tim,Eacca,Eaccv);
 
   char buf[500];
   for (int i=0; i<Sv.size(); ++i) {
@@ -358,7 +360,12 @@ void SEEIIRcollector_av<EGraph>::print(std::ostream& o,bool print_time)
     R[0]=Ra[i];
 
     SEIRcollector_base::print(o,print_time);
+#ifdef ALT_R0
+    double RR = (i>0) ? model.tinf() * (Eacca[i]-Eacca[i-1])/( (time-tim[i-1]) * (I1a[i-1]+I2a[i]) ) : 0 ;
+    sprintf(buf,"%11.6g %11.6g %11.6g %11.6g %11.6g ",impa[i],closea[i],comma[i],totala[i],RR);
+#else
     sprintf(buf,"%11.6g %11.6g %11.6g %11.6g %11.6g ",impa[i],closea[i],comma[i],totala[i],RRa[i]);
+#endif
     std::cout << buf;
 
     S[0]=Sv[i];
@@ -368,7 +375,11 @@ void SEEIIRcollector_av<EGraph>::print(std::ostream& o,bool print_time)
     I[1]=I2v[i];
     R[0]=Rv[i];
     SEIRcollector_base::print(o,false);
+#ifdef ALT_R0
+    sprintf(buf,"%11.6g %11.6g %11.6g %11.6g      ----  ",impv[i],closev[i],commv[i],totalv[i]);
+#else
     sprintf(buf,"%11.6g %11.6g %11.6g %11.6g %11.6g",impv[i],closev[i],commv[i],totalv[i],RRv[i]);
+#endif 
     std::cout << buf << '\n';
   }
 }
