@@ -205,10 +205,10 @@ void SEEIIRstate::push(double time_,SEEIIRistate &s)
   R[0]=s.R;
   Population_state::print(std::cout,true);
 
-  int inftot=s.inf_imported+s.inf_close+s.inf_community;
-  double RR = s.tinf * (inftot - inf_accum0)/( (time-time0) * (I[0]+I[1]) );
+  double RR = s.tinf * (s.Eacc-Eacc0)/( (time-time0) * I0 );
   time0=time;
-  inf_accum0=inftot;
+  Eacc0=s.Eacc;
+  I0=s.I1+s.I2;
 
   char buf[200];
   sprintf(buf,"%11d %11d %11d %11d %11.6g %11.6g",s.inf_imported,s.inf_close,s.inf_community,
@@ -247,10 +247,10 @@ void SEEIIRstate_av::push(double time,SEEIIRistate &s)
   Closeav.push(time,s.inf_close);
   Commav.push(time,s.inf_community);
   betaav.push(time,s.beta_out);
-  int inftot=s.inf_imported+s.inf_close+s.inf_community;
-  double RR = s.tinf * (inftot - inf_accum0)/( (time-time0) * (s.I1+s.I2) );
+  double RR = s.tinf * (s.Eacc-Eacc0)/( (time-time0) * I0 );
   time0=time;
-  inf_accum0=inftot;
+  Eacc0=s.Eacc;
+  I0=s.I1+s.I2;
   RRav.push(time,RR);
 }
 
