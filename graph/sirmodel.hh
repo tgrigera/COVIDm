@@ -42,7 +42,7 @@ public:
   void set_all_susceptible();
   void apply_transition(int);
   void compute_rates(typename EGraph::igraph_t::Node);
-  void add_imported_infections(Imported_infection*);
+  void add_imported(Forced_transition*);
   void set_beta(double b) {beta=b;}
   void set_gamma(double g) {gamma=g;}
 
@@ -237,11 +237,13 @@ void SIR_model<EGraph>::apply_transition(int itran)
 }
 
 template<typename EGraph>
-void SIR_model<EGraph>::add_imported_infections(Imported_infection* ii)
+void SIR_model<EGraph>::add_imported(Forced_transition* ii)
 {
   typename EGraph::igraph_t::Node node;
 
-  for (int i=0; i<ii->new_cases; ++i) {
+  if (ii->new_infected > anodemap[hroot]->NS)
+    throw std::runtime_error("Too many infections");
+  for (int i=0; i<ii->new_infected; ++i) {
     do node=egraph.random_inode(); while(inodemap[node].state!=SIR_node::S);
     inodemap[node].state=SIR_node::I;
     egraph.for_each_anode(node,
@@ -251,6 +253,18 @@ void SIR_model<EGraph>::add_imported_infections(Imported_infection* ii)
     for (typename EGraph::igraph_t::InArcIt arc(egraph.igraph,node); arc!=lemon::INVALID; ++arc)
       compute_rates(egraph.igraph.source(arc));
   }
+
+  if (ii->new_recovered > anodemap[hroot]->NS)
+    throw std::runtime_error("Too many recovered");
+  for (int i=0; i<ii->new_recovered; ++i) {
+    do node=egraph.random_inode(); while(inodemap[node].state!=SIR_node::S);
+    inodemap[node].state=SIR_node::R;
+    egraph.for_each_anode(node,
+		   [this](typename EGraph::hnode_t hnode)
+		   {aggregate_node* anode=this->anodemap[hnode]; anode->NS--; anode->NR++;}    );
+    compute_rates(node);
+  }
 }
+
 
 #endif /* SIRMODEL_HH */

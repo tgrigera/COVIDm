@@ -32,7 +32,7 @@
 //
 // Epidemiological_model
 
-class Imported_infection;
+class Forced_transition;
 
 class Epidemiological_model {
 public:
@@ -40,7 +40,7 @@ public:
   virtual void apply_transition(int)=0;
   virtual void compute_all_rates()=0;
   virtual void set_all_susceptible()=0;
-  virtual void add_imported_infections(Imported_infection*)=0;
+  virtual void add_imported(Forced_transition*)=0;
   void         update_cumulative_rates();
 
   std::vector<double> cumulative_rates;

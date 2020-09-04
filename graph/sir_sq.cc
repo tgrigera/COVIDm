@@ -122,7 +122,7 @@ int main(int argc,char* argv[])
     SIR.set_gamma(options.gamma);
 
     event_queue_t events;
-    Imported_infection iinf(1,options.I0);
+    Forced_transition iinf(1,options.I0,0);
     events.push(&iinf);
 
     std::cout << collector.header() << '\n';

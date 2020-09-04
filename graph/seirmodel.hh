@@ -40,7 +40,7 @@ public:
   void set_all_susceptible();
   void apply_transition(int);
   void compute_rates(typename EGraph::igraph_t::Node);
-  void add_imported_infections(Imported_infection*);
+  void add_imported(Forced_transition*);
   void set_rate_constants(double beta,double sigma1,double sigma2,double gamma1,
 			  double gamma2);
 
@@ -286,14 +286,18 @@ void SEEIIR_model<EGraph>::apply_transition(int itran)
 template<>
 void SEEIIR_model<MWFCGraph>::apply_transition(int itran);
 
+///////////////////////////////////////////////////////////////////////////////
+//
+// event: add_imported
+
 template<typename EGraph>
-void SEEIIR_model<EGraph>::add_imported_infections(Imported_infection* ii)
+void SEEIIR_model<EGraph>::add_imported(Forced_transition* ii)
 {
   typename EGraph::igraph_t::Node node;
 
-  if (ii->new_cases > anodemap[hroot]->NS)
+  if (ii->new_infected > anodemap[hroot]->NS)
     throw std::runtime_error("Too many imported infections");
-  for (int i=0; i<ii->new_cases; ++i) {
+  for (int i=0; i<ii->new_infected; ++i) {
     do node=egraph.random_inode(); while(inodemap[node].state!=SEEIIR_node::S);
     inodemap[node].state=SEEIIR_node::I1;
     egraph.for_each_anode(node,
@@ -305,9 +309,19 @@ void SEEIIR_model<EGraph>::add_imported_infections(Imported_infection* ii)
       compute_rates(egraph.igraph.source(arc));
   }
 
+  if (ii->new_recovered > anodemap[hroot]->NS)
+    throw std::runtime_error("Too many imported infections");
+  for (int i=0; i<ii->new_recovered; ++i) {
+    do node=egraph.random_inode(); while(inodemap[node].state!=SEEIIR_node::S);
+    inodemap[node].state=SEEIIR_node::R;
+    egraph.for_each_anode(node,
+		   [this](typename EGraph::hnode_t hnode)
+		   {aggregate_data* anode=this->anodemap[hnode];
+		     anode->NS--; anode->NR++; }  );
+    compute_rates(node);
+  }
 
 }
-
 
 ///////////////////////////////////////////////////////////////////////////////
 //

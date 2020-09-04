@@ -42,9 +42,9 @@ struct opt {
   double exp_mu;
   
 
-  // imported infections
-  typedef std::vector<Imported_infection> imported_infections_t;
-  imported_infections_t                   imported_infections;
+  // Forced transitions
+  typedef std::vector<Forced_transition> forced_transition_t;
+  forced_transition_t                    forced_transitions;
   std::string eifile;             // File to read imported infected cases
 
   // rates vs time
@@ -117,11 +117,12 @@ void read_parameters(int argc,char *argv[])
   options.eifile.erase(options.eifile.end()-1);   // remove trailing newline
   read_imported_infections();
 
-  printf("# Imported infections:\n");
-  printf("# Time   Cases\n");
+  printf("# Infections and recoveries:\n");
+  printf("# Time   Infections   Recoveries\n");
   int II=0;
-  for (auto iir: options.imported_infections)
-    printf("# %g %d\n",iir.time,II+=iir.new_cases);
+  int RR=0;
+  for (auto iir: options.forced_transitions)
+    printf("# %g %d %d\n",iir.time,II+=iir.new_infected,RR+=iir.new_recovered);
 
   read_rates_vs_time(f);
   fclose(f);
@@ -141,13 +142,15 @@ void read_imported_infections()
 
   double etime;
   int   eI,eIold=0;
+  int   eR,eRold=0;
   while (ungetc(fgetc(f),f)!=EOF) {
     char *buf=readbuf(f);
-    if (sscanf(buf,"%lg %d",&etime,&eI)!=2) {
+    if (sscanf(buf,"%lg %d %d",&etime,&eI,&eR)!=3) {
       std::cerr  << "couldn't read record: " << buf << "\n";
       throw std::runtime_error(strerror(errno));}
-    options.imported_infections.push_back(Imported_infection(etime,eI-eIold));
+    options.forced_transitions.push_back(Forced_transition(etime,eI-eIold,eR-eRold));
     eIold=eI;
+    eRold=eR;
   }
   
   fclose(f);
@@ -181,8 +184,8 @@ void merge_events()
 {
   while (!event_queue.empty()) event_queue.pop();
   
-  auto ii_begin=options.imported_infections.begin();
-  auto ii_end=options.imported_infections.end();
+  auto ii_begin=options.forced_transitions.begin();
+  auto ii_end=options.forced_transitions.end();
   auto ir_begin=options.rates_vs_time.begin();
   auto ir_end=options.rates_vs_time.end();
   

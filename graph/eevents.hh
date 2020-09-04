@@ -36,20 +36,20 @@ typedef std::queue<Event*> event_queue_t;
 
 ///////////////////////////////////////////////////////////////////////////////
 //
-// Imported_infection
+// Fored_transition
 
-class Imported_infection : public Event {
+class Forced_transition : public Event {
 public:
-  Imported_infection(double time,int new_cases) :
-    Event(time), new_cases(new_cases) {}
+  Forced_transition(double time,int new_infected,int new_recovered) :
+    Event(time), new_infected(new_infected), new_recovered(new_recovered) {}
   void apply(Epidemiological_model*);
 
-  int  new_cases;
+  int  new_infected,new_recovered;
 } ;
 
-inline void Imported_infection::apply(Epidemiological_model* em)
+inline void Forced_transition::apply(Epidemiological_model* em)
 {
-  em->add_imported_infections(this);
+  em->add_imported(this);
 }
 
 #endif /* EEVENTS_HH */
