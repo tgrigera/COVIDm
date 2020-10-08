@@ -167,6 +167,10 @@ are forced to state $I_1$ so that the total count of imported cases
 matches the number given in the file.  Both times and cases must be
 monotonically increasing.
 
+There is also the possibility to introduce a number of recovered individuals at
+time 0.  This number is given in the parameter file just before
+specifying the imported infections file.
+
 Finally, there are two possible invocations.  The first one is
 
 `seeiir_h parameterfile seed steps Nruns`

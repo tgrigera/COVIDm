@@ -99,6 +99,7 @@ struct opt {
   std::vector<std::vector<double>> PM; // Distribution of descendants
   std::string eifile;             // File to read imported infected cases
 
+  int               initially_recovered;
   // imported infections
   struct ei {double time; int I;} ;
   typedef std::vector<ei>               imported_infections_t;
@@ -192,6 +193,11 @@ void read_parameters(int argc,char *argv[])
   printf("#\n# Nruns = %d\n",options.Nruns);
   if (options.detail_level>0)
     printf("# Writing detail down to level %d to file %s\n",options.detail_level,options.dfile);
+
+  buf=readbuf(f);
+  sscanf(buf,"%d",&options.initially_recovered);
+  printf("# Initially recovered: %d\n",options.initially_recovered);
+  
 
   buf=readbuf(f);
   options.eifile=buf;
@@ -375,6 +381,7 @@ public:
   void set_all_S();
   void set_rate_parameters(rates_t& r) {rates=r;}
   void add_imported(int I);
+  void force_recover(int R);
   void recompute_counts();
   void check_structures();
   void compute_rates();
@@ -784,6 +791,24 @@ void SEIRPopulation::add_imported(int I)
   gdata.infections_imported+=I;
 }
 
+void SEIRPopulation::force_recover(int R)  // Move R individuals from S to R
+{
+  node_data& rootd=treemap[root];
+  if (R>rootd.S)
+    {std::cerr << "Cannot recover, too few suscetibles\n"; exit(1);}
+
+  // Randomly choose and recover R individuals
+  for (int infn=0; infn<R; ++infn) {
+    int noden=ran(rootd.S);
+    // find in family and recover
+    auto listi= listS.begin() + noden;
+    node_t l1node=*listi;
+    listS.erase(listi);
+    update_counts<readS,readR>(l1node);
+    update_after_erase_susceptible(l1node);
+  }
+}
+
 
 ///////////////////////////////////////////////////////////////////////////////
 //
@@ -986,6 +1011,7 @@ int main(int argc,char *argv[])
   // Do runs and print results
   for (int n=0; n<options.Nruns; ++n) {
     // std::cout << "# N = " << pop.gstate.N << '\n';
+    pop.force_recover(options.initially_recovered);
     run(pop,state);
     pop.set_all_S();
   }

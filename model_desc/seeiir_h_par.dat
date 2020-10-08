@@ -20,6 +20,8 @@
   18
   12
   5
+# Initially recovered
+ 10
 # File to read imported infections
 imported_infections.dat
 # Rate constants vs time
