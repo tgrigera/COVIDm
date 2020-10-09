@@ -214,6 +214,7 @@ public:
   igraph_t &igraph;               
   hgraph_t &hgraph;
   virtual  double arc_weight(iarc_t arc);
+  virtual  double arc_weight(inode_t i,inode_t j);
   inode_t  random_inode();
   int      id(inode_t);            // returns Lemon's unique id 
   inode_t  inode(int id);          // returns a node referenced by id (obtained through id() method)
@@ -302,6 +303,7 @@ class MWFCGraph : public FCGraph {
 public:
   static MWFCGraph* create(int N);
   double arc_weight(iarc_t arc);
+  double arc_weight(inode_t i,inode_t j);
   void set_weights_random_multiplicative(double (*betadist)(),double scale);
 
 protected:
@@ -320,6 +322,7 @@ inline MWFCGraph* MWFCGraph::create(int N)
 {
   return new MWFCGraph(FCGraph::create_ctor_data(N));
 }
+
 
 ///////////////////////////////////////////////////////////////////////////////
 //

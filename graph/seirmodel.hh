@@ -83,7 +83,7 @@ SEEIIR_model<EGraph>::SEEIIR_model(EGraph& egraph) :
   for (typename EGraph::igraph_t::NodeIt inode(egraph.igraph); inode!=lemon::INVALID; ++inode) {
     inodemap[inode].state=SEEIIR_node::S;
     inodemap[inode].itransition=transitions.size();
-    Epidemiological_model::transition tr={egraph.id(inode),0,0};
+    Epidemiological_model::transition tr(egraph.id(inode),0,0);
     transitions.push_back(tr);
   }
   set_rate_constants(1.,1.,1.,1.,1.);
@@ -188,6 +188,9 @@ void SEEIIR_model<EGraph>::init_htree(typename EGraph::hnode_t lroot)
 }
 
 
+template<>
+void SEEIIR_model<MWFCGraph>::compute_rates(typename MWFCGraph::igraph_t::Node node);
+
 template<typename EGraph>
 void SEEIIR_model<EGraph>::compute_rates(typename EGraph::igraph_t::Node node)
 {
@@ -289,6 +292,9 @@ void SEEIIR_model<MWFCGraph>::apply_transition(int itran);
 ///////////////////////////////////////////////////////////////////////////////
 //
 // event: add_imported
+
+template<>
+void SEEIIR_model<MWFCGraph>::add_imported(Forced_transition* ii);
 
 template<typename EGraph>
 void SEEIIR_model<EGraph>::add_imported(Forced_transition* ii)

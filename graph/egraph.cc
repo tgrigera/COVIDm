@@ -95,6 +95,11 @@ double FCGraph::arc_weight(iarc_t arc)
   return default_arc_weight;
 }
 
+double FCGraph::arc_weight(inode_t i,inode_t j)
+{
+  return default_arc_weight;
+}
+
 // FCGraph::~FCGraph()
 // {
 //   delete hmap;
@@ -128,6 +133,10 @@ double MWFCGraph::arc_weight(iarc_t arc)
   return wfactor[i]*wfactor[j];
 }
 
+double MWFCGraph::arc_weight(inode_t i,inode_t j)
+{
+  return wfactor[i]*wfactor[j];
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 //

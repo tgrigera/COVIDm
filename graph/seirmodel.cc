@@ -23,6 +23,44 @@
 #include "seirmodel.hh"
 
 template<>
+void SEEIIR_model<MWFCGraph>::compute_rates(typename MWFCGraph::igraph_t::Node node)
+{
+  auto &noded=inodemap[node];
+  double w,rate;
+
+  switch(noded.state) {
+  case SEEIIR_node::S:
+    w=0;
+    for (typename MWFCGraph::igraph_t::NodeIt snode(egraph.igraph); snode!=lemon::INVALID; ++snode) {
+      if (snode==node) continue;
+      auto tnode=inodemap[snode];
+      if (tnode.state==SEEIIR_node::I1 || tnode.state==SEEIIR_node::I2) {
+	w+=egraph.arc_weight(node,snode);
+      }
+    }
+    rate=beta*w;
+    break;
+  case SEEIIR_node::E1:
+    rate=sigma1;
+    break;
+  case SEEIIR_node::E2:
+    rate=sigma2;
+    break;
+  case SEEIIR_node::I1:
+    rate=gamma1;
+    break;
+  case SEEIIR_node::I2:
+    rate=gamma2;
+    break;
+  case SEEIIR_node::R:
+    rate=0;
+    break;
+  }
+
+  transitions[noded.itransition].rate=rate;
+}
+
+template<>
 void SEEIIR_model<MWFCGraph>::apply_transition(int itran)
 {
   static int n_rate_updates=0;
@@ -97,6 +135,44 @@ void SEEIIR_model<MWFCGraph>::apply_transition(int itran)
       if (transitions[node2d.itransition].rate<0)            // The correction could bring the rate to less than 0 due to numerical error
 	transitions[node2d.itransition].rate=0;              // we correct this because negative rates cause errors in the binary search
     }
+  }
+
+}
+
+// This had to be specialized to avoid using arcs with the fully connected graph
+// because lemon cannot correctly handle arcs in graphs larger than 47000 nodes or so
+
+template<>
+void SEEIIR_model<MWFCGraph>::add_imported(Forced_transition* ii)
+{
+  typename MWFCGraph::igraph_t::Node node;
+
+  if (ii->new_infected > anodemap[hroot]->NS)
+    throw std::runtime_error("Too many imported infections");
+  for (int i=0; i<ii->new_infected; ++i) {
+    do node=egraph.random_inode(); while(inodemap[node].state!=SEEIIR_node::S);
+    inodemap[node].state=SEEIIR_node::I1;
+    egraph.for_each_anode(node,
+		   [this](typename MWFCGraph::hnode_t hnode)
+		   {aggregate_data* anode=this->anodemap[hnode];
+		     anode->NS--; anode->NI1++; anode->inf_imported++; anode->inf_accum++; }  );
+    compute_rates(node);
+    for (typename MWFCGraph::igraph_t::NodeIt snode(egraph.igraph); snode!=lemon::INVALID; ++snode) {
+      if (snode==node) continue;
+      compute_rates(snode);
+    }
+  }
+
+  if (ii->new_recovered > anodemap[hroot]->NS)
+    throw std::runtime_error("Too many imported infections");
+  for (int i=0; i<ii->new_recovered; ++i) {
+    do node=egraph.random_inode(); while(inodemap[node].state!=SEEIIR_node::S);
+    inodemap[node].state=SEEIIR_node::R;
+    egraph.for_each_anode(node,
+		   [this](typename MWFCGraph::hnode_t hnode)
+		   {aggregate_data* anode=this->anodemap[hnode];
+		     anode->NS--; anode->NR++; }  );
+    compute_rates(node);
   }
 
 }

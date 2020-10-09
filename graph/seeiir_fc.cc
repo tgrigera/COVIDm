@@ -234,8 +234,8 @@ int main(int argc,char* argv[])
     new SEEIIRcollector_av<MWFCGraph>(*SEEIIR,options.deltat) :
     new SEEIIRcollector<MWFCGraph>(*SEEIIR);
   
-  std::cerr << "# Starting run\n";
   std::cout << collector->header() << '\n';
+
   for (int n=0; n<options.Nruns; ++n) {
     merge_events();
     Sampler *sampler =  new Gillespie_sampler(0,options.steps,options.deltat,collector);

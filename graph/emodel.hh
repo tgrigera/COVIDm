@@ -50,6 +50,9 @@ protected:
     int           nodeid;
     double        rate;
     short         type;
+
+    transition(int nodeid,double rate,short type) :
+      nodeid(nodeid), rate(rate), type(type) {}
   } ;
   std::vector<transition> transitions;
 
