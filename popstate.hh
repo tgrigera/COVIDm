@@ -114,6 +114,11 @@ struct SEEIIRistate {
   int    Eacc;
   double beta_out;
   double tinf;
+
+  SEEIIRistate() :
+    N(0), S(0), E1(0), E2(0), I1(0), I2(0), R(0),
+    inf_imported(0), inf_close(0), inf_community(0),
+    Eacc(0), beta_out(0), tinf(0) {}
 } ;
 
 

@@ -99,9 +99,8 @@ struct opt {
   std::vector<std::vector<double>> PM; // Distribution of descendants
   std::string eifile;             // File to read imported infected cases
 
-  int               initially_recovered;
   // imported infections
-  struct ei {double time; int I;} ;
+  struct ei {double time; int I; int R;} ;
   typedef std::vector<ei>               imported_infections_t;
   imported_infections_t                 imported_infections;
   // rates vs time
@@ -195,19 +194,14 @@ void read_parameters(int argc,char *argv[])
     printf("# Writing detail down to level %d to file %s\n",options.detail_level,options.dfile);
 
   buf=readbuf(f);
-  sscanf(buf,"%d",&options.initially_recovered);
-  printf("# Initially recovered: %d\n",options.initially_recovered);
-  
-
-  buf=readbuf(f);
   options.eifile=buf;
   options.eifile.erase(options.eifile.end()-1);   // remove trailing newline
   read_imported_infections();
 
   printf("# Imported infections:\n");
-  printf("# Time   Cases\n");
+  printf("# Time   Imported_inf  Forced_R\n");
   for (auto iir: options.imported_infections)
-    printf("# %g %d\n",iir.time,iir.I);
+    printf("# %g %d %d\n",iir.time,iir.I,iir.R);
 
   read_rates_vs_time(f);
   fclose(f);
@@ -227,6 +221,8 @@ void read_parameters(int argc,char *argv[])
 
 void read_imported_infections()
 {
+  int nread;
+  
   FILE *f=fopen(options.eifile.c_str(),"r");
   if (f==0) {
     std::cerr << "Error opening file (" << options.eifile << ")\n";
@@ -236,8 +232,11 @@ void read_imported_infections()
   opt::ei ei;
   while (ungetc(fgetc(f),f)!=EOF) {
     char *buf=readbuf(f);
-    if (sscanf(buf,"%lg %d",&ei.time,&ei.I)!=2) {
+    if ( (nread=sscanf(buf,"%lg  %d  %d",&ei.time,&ei.I,&ei.R))!=3) {
       std::cerr  << "couldn't read record: " << buf << "\n";
+      std::cerr << "shit\n";
+      std::cerr << "correctly read " << nread << " values\n";
+      std::cerr << ei.time << ' ' << ei.I << ' ' << ei.R << '\n';
       throw std::runtime_error(strerror(errno));}
     options.imported_infections.push_back(ei);
   }
@@ -331,10 +330,12 @@ typedef std::vector<node_t>           node_list_t;
 
 struct global_data {
   int              infections_imported;
+  int              forcibly_recovered;
   std::vector<int> infections_level;
 
   global_data(int levels) :
     infections_imported(0),
+    forcibly_recovered(0),
     infections_level(levels+1,0)
   {}
 } ;
@@ -380,8 +381,10 @@ public:
   void rebuild_hierarchy();
   void set_all_S();
   void set_rate_parameters(rates_t& r) {rates=r;}
+  void force_infection_recover(int I,int R);
   void add_imported(int I);
   void force_recover(int R);
+  void unrecover(int S);
   void recompute_counts();
   void check_structures();
   void compute_rates();
@@ -402,7 +405,7 @@ private:
   int (*noffspring)(int);
   Uniform_integer                        ran;
   std::vector<node_list_t>               level_nodes;
-  std::vector<node_t>                    listS,listE1,listE2,listI1,listI2;
+  std::vector<node_t>                    listS,listE1,listE2,listI1,listI2,listR;
   std::vector<node_t>                    infected_nodes;
   
   node_t build_tree(int level);
@@ -494,6 +497,8 @@ void SEIRPopulation::set_all_S()
   std::fill(gdata.infections_level.begin(),gdata.infections_level.end(),0.);
 }
 
+// This recomputes all cumulative counts and rebuilds lists
+// except listR
 void SEIRPopulation::recompute_counts()
 {
   listS.clear();
@@ -512,7 +517,10 @@ void SEIRPopulation::recompute_counts()
     for (int i=0; i<noded.E2; ++i) listE2.push_back(node);
     for (int i=0; i<noded.I1; ++i) listI1.push_back(node);
     for (int i=0; i<noded.I2; ++i) listI2.push_back(node);
-    if (noded.I1+noded.I2>0) infected_nodes.push_back(node);
+    if (noded.I1+noded.I2>0) {
+      noded.infected_nodes_in_list=infected_nodes.size();
+      infected_nodes.push_back(node);
+    }
   }
     
   for (int level=2; level<=levels; ++level) {
@@ -532,7 +540,10 @@ void SEIRPopulation::recompute_counts()
 	noded.I2+=sond.I2;
 	noded.R+=sond.R;
       }
-      if (noded.I1+noded.I2>0) infected_nodes.push_back(node);
+      if (noded.I1+noded.I2>0) {
+	noded.infected_nodes_in_list=infected_nodes.size();
+	infected_nodes.push_back(node);
+      }
       Nprev+=noded.S;
     }
   }
@@ -583,6 +594,8 @@ void SEIRPopulation::check_structures()
     assert(treemap[node].I1+treemap[node].I2>0);
   }
 
+  assert(listR.size()==gdata.forcibly_recovered);
+
   for (int l=levels; l>0; --l) {
     for (auto nn: level_nodes[l]) {
       auto nnd=treemap[nn];
@@ -594,7 +607,16 @@ void SEIRPopulation::check_structures()
       }
     }
   }
-  
+
+  for (int l=levels; l>0; --l) {
+    for (auto nn: level_nodes[l]) {
+      auto nnd=treemap[nn];
+      if (nnd.I1 + nnd.I2>0) {
+	assert(infected_nodes[nnd.infectod_nodes_in_list]==nn);
+      }
+    }
+  }
+
 }
 
 /*
@@ -767,6 +789,16 @@ void SEIRPopulation::count_infection_kind(node_t node)
 }
 
 
+void SEIRPopulation::force_infection_recover(int I,int R)
+{
+  if (I!=gdata.infections_imported)
+    add_imported(I);
+  if (R>gdata.forcibly_recovered)
+    force_recover(R-gdata.forcibly_recovered);
+  else if (R<gdata.forcibly_recovered)
+    unrecover(gdata.forcibly_recovered-R);
+}
+
 void SEIRPopulation::add_imported(int I)
 {
   I-=gdata.infections_imported;  // This is the number of new cases
@@ -803,10 +835,31 @@ void SEIRPopulation::force_recover(int R)  // Move R individuals from S to R
     // find in family and recover
     auto listi= listS.begin() + noden;
     node_t l1node=*listi;
+    listR.push_back(l1node);           // We track only the focibly recovered, so that the can be turn susceptible afterwards
     listS.erase(listi);
     update_counts<readS,readR>(l1node);
     update_after_erase_susceptible(l1node);
   }
+  gdata.forcibly_recovered+=R;
+}
+
+void SEIRPopulation::unrecover(int S)  // Make S of the forcibly recovered susceptible again
+{
+  if (S>listR.size()) 
+    {std::cerr << "Requested too many unrecovers\n"; exit(1);}
+
+  for (int isus=0; isus<S; ++isus) {
+    int noden=ran(listR.size());
+    // find in family and recover
+    auto listi= listR.begin() + noden;
+    node_t l1node=*listi;
+    node_data& nd=treemap[l1node];
+    nd.R--;
+    nd.S++;
+    listR.erase(listi);
+  }
+  recompute_counts();
+  gdata.forcibly_recovered-=S;
 }
 
 
@@ -944,7 +997,7 @@ void run(SEIRPopulation &pop,SEEIIRstate *state)
 
       switch (events.front().kind) {
       case event::infection:
-  	pop.add_imported(options.imported_infections[events.front().enumber].I);
+  	pop.force_infection_recover(options.imported_infections[events.front().enumber].I,options.imported_infections[events.front().enumber].R);
   	break;
       case event::rate_change:
   	pop.set_rate_parameters(options.rates_vs_time[events.front().enumber]);
@@ -1011,8 +1064,8 @@ int main(int argc,char *argv[])
   // Do runs and print results
   for (int n=0; n<options.Nruns; ++n) {
     // std::cout << "# N = " << pop.gstate.N << '\n';
-    pop.force_recover(options.initially_recovered);
     run(pop,state);
+    // pop.check_structures();
     pop.set_all_S();
   }
 
