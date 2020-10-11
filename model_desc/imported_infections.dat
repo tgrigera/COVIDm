@@ -1,5 +1,5 @@
-# day  infected
-  0    1
-  1    3
-  5    7
-  10   10
+# day  infected  recovered
+  0    1           0
+  1    3           10
+  5    7           10
+  10   10          0

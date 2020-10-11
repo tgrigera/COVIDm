@@ -159,7 +159,7 @@ times are only given if changes are desired.
 
 As in the SEEIIR model above, the population is initialized
 to all S, so infected individuals must be introduced in order to start
-the epidemic.  The external infections are read from a two-column
+the epidemic.  The external infections are read from a tree-column
 [file](./imported_infections.dat) giving time and number of imported
 cases.  The second column is interpreted as the cumulative total
 cases, not new cases.  At the specifed time a number of S individuals
@@ -167,9 +167,13 @@ are forced to state $I_1$ so that the total count of imported cases
 matches the number given in the file.  Both times and cases must be
 monotonically increasing.
 
-There is also the possibility to introduce a number of recovered individuals at
-time 0.  This number is given in the parameter file just before
-specifying the imported infections file.
+The thir column of this file gives the possibility to force a number of susceptible
+individuals to state R,
+and to make them susceptible again at a later time.  The number of
+forced R individuals is given as a third column in the imported infections
+file.  This number need not be monotonically increasing: a decrease
+indicates that some (picked at random) _of the previouly forced to R_
+individuals are to become susceptible again.
 
 Finally, there are two possible invocations.  The first one is
 
