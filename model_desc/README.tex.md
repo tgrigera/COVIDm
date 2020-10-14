@@ -141,9 +141,9 @@ individuals of group $\nu_{i,l}$ in state $X$, the transition rates
 are
 
 \begin{align*}
-   W^{(i)}_{S\to E_1} & = \sum_{l=2}^L \beta_l \frac{N_{\nu_{l,i}}(I_1)+N_{\nu_{i,l}}(I_2) }
-                     {N_{\nu_{i,l}}-1}  +
-                          \beta_1  \left( N_{\nu_{i,1}}(I_1) + N_{\nu_{i,1}}(I_2) \right), \\
+   W^{(i)}_{S\to E_1} & = \sum_{l=2}^L \beta_l \frac{N_{\nu_{l,i}}(I_1)+N_{\nu_{l,i}}(I_2) }
+                     {N_{\nu_{l,i}}-1}  +
+                          \beta_1  \left( N_{\nu_{1,i}}(I_1) + N_{\nu_{1,i}}(I_2) \right), \\
    W^{(i)}_{E_1\to E_2} &=   \sigma_1, \\
    W^{(i)}_{E_2 \to I_1} &=  \sigma_2, \\
    W^{(i)}_{I_1 \to I_2} &=   \gamma_1, \\
