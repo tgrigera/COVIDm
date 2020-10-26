@@ -493,6 +493,7 @@ void SEIRPopulation::set_all_S()
   }
   recompute_counts();
   gdata.infections_imported=0;
+  gdata.forcibly_recovered=0;
   gdata.infections_level.resize(levels+1,0);
   std::fill(gdata.infections_level.begin(),gdata.infections_level.end(),0.);
 }
