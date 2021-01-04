@@ -331,6 +331,7 @@ typedef std::vector<node_t>           node_list_t;
 struct global_data {
   int              infections_imported;
   int              forcibly_recovered;
+  int              Eacc;
   std::vector<int> infections_level;
 
   global_data(int levels) :
@@ -495,6 +496,7 @@ void SEIRPopulation::set_all_S()
   gdata.infections_imported=0;
   gdata.forcibly_recovered=0;
   gdata.infections_level.resize(levels+1,0);
+  gdata.Eacc=0;
   std::fill(gdata.infections_level.begin(),gdata.infections_level.end(),0.);
 }
 
@@ -686,6 +688,7 @@ void SEIRPopulation::apply_event(int evn)
     listE1.push_back(l1node);
     listS.erase(listi);
     update_counts<readS,readE1>(l1node);
+    gdata.Eacc++;
     update_after_erase_susceptible(l1node);
     break;
     
@@ -996,6 +999,8 @@ void SEEIIR_observer::push(double time,SEIRPopulation& pop)
   gstate.inf_close=pop.gdata.infections_level[1];
   gstate.inf_community=pop.gdata.infections_level[pop.levels];
   gstate.beta_out=pop.rates.beta[2];
+  gstate.Eacc=pop.gdata.Eacc;
+  gstate.tinf= 1./pop.rates.gamma1 + 1./pop.rates.gamma2;
   state->push(time,gstate);
 
   if (dlevel<0) return;
