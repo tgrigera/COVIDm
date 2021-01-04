@@ -8,7 +8,7 @@
 SUBDIRS = . graph
 
 bin_PROGRAMS = sir sir_m sir_f seeiir_i1 seeiir_i2 seeiir_i3 seeiir_h	\
-seeiir_h_nol
+	       seeiir_h_force_recover_family seeiir_h_nol
 
 sir_SOURCES = sir.cc qdrandom.cc
 
@@ -26,6 +26,9 @@ seeiir_i3_SOURCES = seeiir_main.cc bsearch.cc popstate.cc geoave.cc qdrandom.cc
 seeiir_i3_CPPFLAGS = -DSEEIIR_IMPLEMENTATION_3
 
 seeiir_h_SOURCES = seeiir_h.cc  qdrandom.cc bsearch.cc popstate.cc geoave.cc
+
+seeiir_h_force_recover_family_SOURCES = seeiir_h.cc  qdrandom.cc bsearch.cc popstate.cc geoave.cc
+seeiir_h_force_recover_family_CPPFLAGS = -DFORCE_RECOVER_WHOLE_FAMILIES
 
 seeiir_h_nol_SOURCES = seeiir_h_nolemon.cc  qdrandom.cc bsearch.cc popstate.cc geoave.cc
 

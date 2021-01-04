@@ -45,9 +45,22 @@ members.
     contact, community) in implementations 1 and 2.
 
   - seeiir_h ::  Hierarchical SEEIIR (individuals are grouped in
-    families, families in neighborhoods, etc).  ~seeiir_h_nol~ is an
-    alternative implementation without use of the LEMON library, but
-    is somewhat slower.  It should not be used.
+    families, families in neighborhoods, etc).  =seeiir_h= allows to
+    turn a number of individuals from ~S~ to ~I~ or ~R~ by hand.  The
+    first is used to import infections and start the epidemic, the
+    second feature can be used to simulate individuals that are
+    completely isolated from the infection network (e.g. by strict
+    quarantine).  These forced recoveries can later be turned back to
+    ~S~ (simulating easing of restrictions on these individuals).
+    =seeiir_h_nol= is an alternative implementation without use of the
+    LEMON library, but is somewhat slower and has less features.  It
+    should not be used.
+
+  - seeiir_h_force_recover_family :: This implements the same model as
+    =seeiir_h=, the only difference is that when forcing some
+    individuals to the ~R~ state, it will do so in a way that ensures
+    that these forced recoveries belong to families where all members
+    are recovered (either forced or through the epidemic dynamics).
 
 The format of the parameter file can be gathered from the examples (in
 the [[./model_desc][model_desc]] directory:
@@ -55,7 +68,7 @@ the [[./model_desc][model_desc]] directory:
  - [[./model_desc/sir_par.dat][sir_par.dat]] :: for =sir= and =sir_m=
  - [[./model_desc/sir_par.dat][sir_f_par.dat]] :: for =sir_f=
  - [[./model_desc/seeiir_par.dat][seeiir_par.dat]] :: for =seeiir_i1=, =seeiir_i2= and =seeiir_i3=
- - [[file:./model_desc/seeiir_h_par.dat][seeiir_h_par.dat]] :: for =seeiir_h= and =seeir_h_nol=
+ - [[file:./model_desc/seeiir_h_par.dat][seeiir_h_par.dat]] :: for =seeiir_h= and =seeir_h_force_unrecover_family=
 
 For the meaning of the parameters, see the [[./model_desc/README.md][model description]].
 

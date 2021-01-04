@@ -824,6 +824,62 @@ void SEIRPopulation::add_imported(int I)
   gdata.infections_imported+=I;
 }
 
+#ifdef FORCE_RECOVER_WHOLE_FAMILIES
+
+void SEIRPopulation::force_recover(int R)  // Move aprox R individuals from S to R, recovering whole families
+{
+  node_data& rootd=treemap[root];
+  if (R>rootd.S)
+    {std::cerr << "Cannot recover, too few suscetibles\n"; exit(1);}
+
+  // Randomly choose and recover aprox R individuals
+  int infn=0;
+  while (infn<R) {
+    int noden=ran(rootd.S);
+    // find in family and recover
+    auto listi= listS.begin() + noden;
+    node_t l1node=*listi;
+    node_data& nd=treemap[l1node];
+    if (nd.S+nd.R<nd.N) continue;  // Look for a family with only S and R
+    int rec=nd.S;
+    for (int i=0; i<rec; ++i) {
+      listR.push_back(l1node);           // listR tracks only the focibly recovered
+      listS.erase(listi);
+      update_counts<readS,readR>(l1node);
+      update_after_erase_susceptible(l1node);
+    }
+    infn+=rec;
+  }
+  gdata.forcibly_recovered+=infn;
+}
+
+void SEIRPopulation::unrecover(int S)  // Make aprox S of the forcibly recovered susceptible again
+{
+  if (S>listR.size()) 
+    {std::cerr << "Requested too many unrecovers\n"; exit(1);}
+
+  int isus=0;
+  while (isus<S) {
+    int noden=ran(listR.size());
+    // find in family 
+    auto listi= listR.begin() + noden;
+    node_t l1node=*listi;
+
+    // Now make S all of the forced recoveries of the same family
+    node_data& nd=treemap[l1node];
+    auto efirst = std::remove_if(listR.begin(),listR.end(),[l1node](node_t x) {return x==l1node;} ); // moves all instances of l1node in listR to the end
+    int nrec=listR.end()-efirst;
+    nd.S+=nrec;
+    nd.R-=nrec;
+    isus+=nrec;
+    listR.erase(efirst, listR.end() );  // erase all instances of l1node in listR
+  }
+  recompute_counts();
+  gdata.forcibly_recovered-=isus;
+}
+
+#else /* FORCE_RECOVER_WHOLE_FAMILIES */
+
 void SEIRPopulation::force_recover(int R)  // Move R individuals from S to R
 {
   node_data& rootd=treemap[root];
@@ -836,7 +892,7 @@ void SEIRPopulation::force_recover(int R)  // Move R individuals from S to R
     // find in family and recover
     auto listi= listS.begin() + noden;
     node_t l1node=*listi;
-    listR.push_back(l1node);           // We track only the focibly recovered, so that the can be turn susceptible afterwards
+    listR.push_back(l1node);           // listR tracks only the focibly recovered, so that the can be turned susceptible afterwards
     listS.erase(listi);
     update_counts<readS,readR>(l1node);
     update_after_erase_susceptible(l1node);
@@ -862,6 +918,8 @@ void SEIRPopulation::unrecover(int S)  // Make S of the forcibly recovered susce
   recompute_counts();
   gdata.forcibly_recovered-=S;
 }
+
+#endif /* FORCE_RECOVER_WHOLE_FAMILIES */
 
 
 ///////////////////////////////////////////////////////////////////////////////

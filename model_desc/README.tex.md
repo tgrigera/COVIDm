@@ -167,13 +167,19 @@ are forced to state $I_1$ so that the total count of imported cases
 matches the number given in the file.  Both times and cases must be
 monotonically increasing.
 
-The thir column of this file gives the possibility to force a number of susceptible
-individuals to state R,
-and to make them susceptible again at a later time.  The number of
-forced R individuals is given as a third column in the imported infections
-file.  This number need not be monotonically increasing: a decrease
-indicates that some (picked at random) _of the previouly forced to R_
-individuals are to become susceptible again.
+The third column of this file gives the possibility to force a number
+of susceptible individuals to state R, and to make them susceptible
+again at a later time.  The number of forced R individuals is given as
+a third column in the imported infections file.  This number need not
+be monotonically increasing: a decrease indicates that some (picked at
+random) _of the previouly forced to R_ individuals are to become
+susceptible again.  If the program is =seeiir_h_force_recover_family=,
+then the way this is doen is to randomly choose a family where all
+individuals are in state S or R, and then recover _all_ of the
+susceptible individuals of the family.  This may lead to recovering
+slightly more individuals than requested.  Similarly, when undoing the
+recovery, all of the forcibly recovered members of a family are made
+susceptible again.
 
 Finally, there are two possible invocations.  The first one is
 
