@@ -998,7 +998,10 @@ void SEEIIR_observer::push(double time,SEIRPopulation& pop)
   gstate.R=rootd.R;
   gstate.inf_imported=pop.gdata.infections_imported;
   gstate.inf_close=pop.gdata.infections_level[1];
-  gstate.inf_community=pop.gdata.infections_level[pop.levels];
+  //  gstate.inf_community=pop.gdata.infections_level[pop.levels];
+  gstate.inf_community=0;
+  for (int l=2; l<=pop.levels; ++l)
+    gstate.inf_community+=pop.gdata.infections_level[l];
   gstate.beta_out=pop.rates.beta[2];
   gstate.Eacc=pop.gdata.Eacc;
   gstate.tinf= 1./pop.rates.gamma1 + 1./pop.rates.gamma2;
