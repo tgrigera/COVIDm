@@ -847,6 +847,7 @@ void SEIRPopulation::force_recover(int R)  // Move aprox R individuals from S to
     int rec=nd.S;
     for (int i=0; i<rec; ++i) {
       listR.push_back(l1node);           // listR tracks only the focibly recovered
+      listi = listS.begin() + nd.first_S_in_list;
       listS.erase(listi);
       update_counts<readS,readR>(l1node);
       update_after_erase_susceptible(l1node);
