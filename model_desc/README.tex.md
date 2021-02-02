@@ -215,7 +215,7 @@ For the SIR model, one has
 \end{align*}
 
 where $\sigma_i=S, I, R$ is the state of individual $i$, and
-$\delta_{\sigma,I}$ is Kronecker's delta, i. e. $\delta_{\sigma_,I]i$
+$\delta_{\sigma,I}$ is Kronecker's delta, i. e. $\delta_{\sigma_i,I}$
 equals 1 if $\sigma_i=I$, and 0 otherwise.
 
 Similarly for SEEIIR,
