@@ -173,8 +173,8 @@ again at a later time.  The number of forced R individuals is given as
 a third column in the imported infections file.  This number need not
 be monotonically increasing: a decrease indicates that some (picked at
 random) _of the previouly forced to R_ individuals are to become
-susceptible again.  If the program is =seeiir_h_force_recover_family=,
-then the way this is doen is to randomly choose a family where all
+susceptible again.  If the program is `seeiir_h_force_recover_family`,
+then the way this is done is to randomly choose a family where all
 individuals are in state S or R, and then recover _all_ of the
 susceptible individuals of the family.  This may lead to recovering
 slightly more individuals than requested.  Similarly, when undoing the
