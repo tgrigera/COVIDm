@@ -831,9 +831,14 @@ void SEIRPopulation::add_imported(int I)
 
 void SEIRPopulation::force_recover(int R)  // Move aprox R individuals from S to R, recovering whole families
 {
+  Uniform_real uran;
+
   node_data& rootd=treemap[root];
   if (R>rootd.S)
     {std::cerr << "Cannot recover, too few suscetibles\n"; exit(1);}
+
+  int fmin=0;
+  while (options.PM[1][fmin]==0) ++fmin;
 
   // Randomly choose and recover aprox R individuals
   int infn=0;
@@ -843,7 +848,10 @@ void SEIRPopulation::force_recover(int R)  // Move aprox R individuals from S to
     auto listi= listS.begin() + noden;
     node_t l1node=*listi;
     node_data& nd=treemap[l1node];
-    if (nd.S+nd.R<nd.N) continue;  // Look for a family with only S and R
+    if (nd.S<nd.N) continue;  // Look for a family with all S
+    // We want to sample uniformly in families, so we must reject some
+    if ( (double) fmin/nd.N  < uran() ) continue;
+
     int rec=nd.S;
     for (int i=0; i<rec; ++i) {
       listR.push_back(l1node);           // listR tracks only the focibly recovered
@@ -862,15 +870,22 @@ void SEIRPopulation::unrecover(int S)  // Make aprox S of the forcibly recovered
   if (S>listR.size()) 
     {std::cerr << "Requested too many unrecovers\n"; exit(1);}
 
+  Uniform_real uran;
+  int fmin=0;
+  while (options.PM[1][fmin]==0) ++fmin;
+
+
   int isus=0;
   while (isus<S) {
     int noden=ran(listR.size());
     // find in family 
     auto listi= listR.begin() + noden;
     node_t l1node=*listi;
+    node_data& nd=treemap[l1node];
+    // We want to sample uniformly in families, so we must reject some
+    if ( (double) fmin/nd.N  < uran() ) continue;
 
     // Now make S all of the forced recoveries of the same family
-    node_data& nd=treemap[l1node];
     auto efirst = std::remove_if(listR.begin(),listR.end(),[l1node](node_t x) {return x==l1node;} ); // moves all instances of l1node in listR to the end
     int nrec=listR.end()-efirst;
     nd.S+=nrec;
