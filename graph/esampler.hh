@@ -93,6 +93,7 @@ class Sampler {
 public:
   Sampler(Collector *collector);
   virtual void sample(double time)=0;
+  virtual ~Sampler() {}
 
 protected:
   Collector* collector;

@@ -86,6 +86,9 @@ std::ostream& operator<<(std::ostream& o,const rates_t &r)
  * options
  *
  */
+
+enum detail_info_type {S,I,R};
+
 struct opt {
   int    last_arg_read;
   
@@ -109,6 +112,7 @@ struct opt {
 
   char *dfile;        // detailed level info file
   int  detail_level;  // print detail info down to level, negative means don't print
+  detail_info_type dinfo_type;
 
   opt() : last_arg_read(0), detail_level(-1) {}
 
@@ -121,12 +125,13 @@ struct opt {
  */
 #include "read_arg.hh"
 
-static int nargs=6;
+static int nargs=7;
 
 void show_usage(char *prog)
 {
   std::cerr << "usage: " << prog << " parameterfile seed steps Nruns\n\n"
-	    << "    or " << prog << " parameterfile seed steps Nruns detail_level detail_file\n\n"
+	    << "    or " << prog << " parameterfile seed steps Nruns detail_level detail_field detail_file\n\n"
+	    << "detail_fileld must be I, R or S\n\n";
     ;
   exit(1);
 }
@@ -146,13 +151,28 @@ void read_rates_vs_time(FILE*);
 
 void read_parameters(int argc,char *argv[])
 {
-  if (argc!=nargs+1 && argc!=nargs-1) show_usage(argv[0]);
+  if (argc!=nargs+1 && argc!=nargs-2) show_usage(argv[0]);
   read_arg(argv,options.ifile);
   read_arg(argv,options.seed);
   read_arg(argv,options.steps);
   read_arg(argv,options.Nruns);
   if (argc==nargs+1) {
+    char* dtypes;
     read_arg(argv,options.detail_level);
+    read_arg(argv,dtypes);
+    char dtype=dtypes[0];
+    switch (dtype) {
+    case 'S':
+      options.dinfo_type=S;
+      break;
+    case 'R':
+      options.dinfo_type=R;
+      break;
+    case 'I':
+    default:
+      options.dinfo_type=I;
+    break;
+    }
     read_arg(argv,options.dfile);
   }
 
@@ -829,6 +849,15 @@ void SEIRPopulation::add_imported(int I)
 
 #ifdef FORCE_RECOVER_WHOLE_FAMILIES
 
+// find the minimum number of members per family
+int find_fmin()
+{
+  if (options.M[1]>0) return options.M[1];
+  int fmin=0;
+  while (options.PM[1][fmin]==0) ++fmin;
+  return fmin;
+}
+
 void SEIRPopulation::force_recover(int R)  // Move aprox R individuals from S to R, recovering whole families
 {
   Uniform_real uran;
@@ -837,8 +866,7 @@ void SEIRPopulation::force_recover(int R)  // Move aprox R individuals from S to
   if (R>rootd.S)
     {std::cerr << "Cannot recover, too few suscetibles\n"; exit(1);}
 
-  int fmin=0;
-  while (options.PM[1][fmin]==0) ++fmin;
+  int fmin=find_fmin();
 
   // Randomly choose and recover aprox R individuals
   int infn=0;
@@ -871,9 +899,7 @@ void SEIRPopulation::unrecover(int S)  // Make aprox S of the forcibly recovered
     {std::cerr << "Requested too many unrecovers\n"; exit(1);}
 
   Uniform_real uran;
-  int fmin=0;
-  while (options.PM[1][fmin]==0) ++fmin;
-
+  int fmin=find_fmin();
 
   int isus=0;
   while (isus<S) {
@@ -947,7 +973,8 @@ void SEIRPopulation::unrecover(int S)  // Make S of the forcibly recovered susce
 
 class SEEIIR_observer {
 public:
-  SEEIIR_observer(SEEIIRstate *state,SEIRPopulation& pop,int dlevel,char *dfile);
+  SEEIIR_observer(SEEIIRstate *state,SEIRPopulation& pop,
+		  int dlevel,detail_info_type dinfo_type,char *dfile);
   ~SEEIIR_observer();
 
   void push(double time,SEIRPopulation& pop);
@@ -956,15 +983,24 @@ private:
   SEEIIRstate  *state;
   SEEIIRistate gstate;
   int  dlevel;
+  detail_info_type dinfo_type;
   char *file;
   FILE *f;
 } ;
 
-SEEIIR_observer::SEEIIR_observer(SEEIIRstate *state,SEIRPopulation& pop,int dlevel,char *dfile) :
-    state(state), dlevel(dlevel), file(dfile)
+SEEIIR_observer::SEEIIR_observer(SEEIIRstate *state,SEIRPopulation& pop,
+				 int dlevel,detail_info_type dinfo_type, char *dfile) :
+  state(state), dlevel(dlevel), dinfo_type(dinfo_type), file(dfile)
 {
   if (dlevel<0) return;
   f=fopen(file,"w");
+
+  fprintf(f,"# By-level details of individuals with state ");
+  switch (dinfo_type) {
+  case S: fprintf(f, " S\n"); break;
+  case I: fprintf(f, " I\n"); break;
+  case R: fprintf(f, " R\n"); break;
+  }
 
   int nc=1+2*(pop.levels-1);
   for (int l=pop.levels; l>=dlevel; --l)
@@ -1031,7 +1067,13 @@ void SEEIIR_observer::push(double time,SEIRPopulation& pop)
     av.clear();
     for (node_t node: pop.level_nodes[l]) {
       node_data &noded=pop.treemap[node];
-      av.push(noded.I1+noded.I2);
+      int detail_data; 
+      switch (dinfo_type) {
+      case S: detail_data=noded.S; break;
+      case I: detail_data=noded.I1+noded.I2; break;
+      case R: detail_data=noded.R; break;
+      }
+      av.push(detail_data);
     }
     fprintf(f,"%11.6g %11.6g ",av.ave(),av.var());
   }
@@ -1039,7 +1081,17 @@ void SEEIIR_observer::push(double time,SEIRPopulation& pop)
   for (int l=pop.levels; l>=dlevel; --l) {
     for (node_t node: pop.level_nodes[l]) {
       node_data &noded=pop.treemap[node];
-      fprintf(f,"%11d ",noded.I1+noded.I2);
+      switch (dinfo_type) {
+      case S:
+	fprintf(f,"%11d ",noded.S);
+	break;
+      case I:
+	fprintf(f,"%11d ",noded.I1+noded.I2);
+	break;
+      case R: 
+	fprintf(f,"%11d ",noded.R);
+	break;
+      }
     }
   }
 
@@ -1059,7 +1111,7 @@ void run(SEIRPopulation &pop,SEEIIRstate *state)
   double last=-10;
 
   event_queue_t events=event_queue;
-  SEEIIR_observer observer(state,pop,options.detail_level,options.dfile);
+  SEEIIR_observer observer(state,pop,options.detail_level,options.dinfo_type,options.dfile);
   Gillespie_sampler<SEEIIR_observer,SEIRPopulation> gsamp(observer,0.,options.steps,1.);
   gsamp.push_data(pop);
 
