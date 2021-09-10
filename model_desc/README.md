@@ -164,16 +164,16 @@ Finally, there are two possible invocations.  The first one is
 
 `seeiir_h parameterfile seed steps Nruns`
 
-The second requests some details of infected individuals at different
+The second requests more details of individual's state at different
 levels to be written to a given file:
 
-`seeiir_h parameterfile seed steps Nruns detail_level detail_file`
+`seeiir_h parameterfile seed steps Nruns detail_level detail_field detail_file`
 
-`detail_file` is the name of an output file, which will hold, as a
-function of time, the average number of infected individuals at each
-level (except level <img src="svgs//ddcb483302ed36a59286424aa5e0be17.svg?invert_in_darkmode" align=middle width=11.18724254999999pt height=22.465723500000017pt/> which contains the whole population which data
+`detail_field` is  a single letter (`S`, `I`, or `R`) which specifies what state one wishes to monitor in more detail.  `detail_file` is the name of an output file, which will hold, as a
+function of time, the average number of  individuals in the requested state  at each
+level (except level <img src="svgs//ddcb483302ed36a59286424aa5e0be17.svg?invert_in_darkmode" align=middle width=11.18724254999999pt height=22.465723500000017pt/> which contains the whole population, which data
 is written to standard otput) and its variance.  In addition, for all
-levels from <img src="svgs//ddcb483302ed36a59286424aa5e0be17.svg?invert_in_darkmode" align=middle width=11.18724254999999pt height=22.465723500000017pt/> down to `detail_level`, the number of infected at each
+levels from <img src="svgs//ddcb483302ed36a59286424aa5e0be17.svg?invert_in_darkmode" align=middle width=11.18724254999999pt height=22.465723500000017pt/> down to `detail_level`, the number of individuals in the requested state at each
 node will be written to the same file.
 
 

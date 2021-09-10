@@ -6,7 +6,7 @@ models, with emphasis on those most useful to model COVID19.
 
 ** Contents
 
-The source code produces the executables listed bewlo (the models are
+The source code produces the executables listed below (the models are
 described [[./model_desc/README.md][here]]).  All models mentioned are implemented in their
 stochastic variants.  The programs read a few arguments from the
 command line, and the model parameters from a parameter file.  Running
@@ -25,18 +25,18 @@ members.
 
 *** Mean-field-like models
 
-  - sir :: Simple mean-field (fully-connected) SIR model.  The
+  - =sir= :: Simple mean-field (fully-connected) SIR model.  The
     simplest implementation, mostly useful as check for other
     programs.
 
-  - sir_m :: The same fully-connected SIR as in =sir= but with the
+  - =sir_m= :: The same fully-connected SIR as in =sir= but with the
     option to do multiple runs and compute mean and variance across
     realizations of the stochastic dynamcis.
 
-  - sir_f :: A SIR with population divided in families, and different
+  - =sir_f= :: A SIR with population divided in families, and different
     in- and out-of-family transmission rates.
 
-  - seeiir_i3 :: A SEEIIR model, with population divided in families.
+  - =seeiir_i3= :: A SEEIIR model, with population divided in families.
     =seeiir_i1= and =seeiir_i2= are two simpler (and slower)
     implementations of the same model, but are deprecated and should
     not be used.  Although it has been checked that the three versions
@@ -44,7 +44,7 @@ members.
     state, there may be bugs in the counting of infection kind (close
     contact, community) in implementations 1 and 2.
 
-  - seeiir_h ::  Hierarchical SEEIIR (individuals are grouped in
+  - =seeiir_h= ::  Hierarchical SEEIIR (individuals are grouped in
     families, families in neighborhoods, etc).  =seeiir_h= allows to
     turn a number of individuals from ~S~ to ~I~ or ~R~ by hand.  The
     first is used to import infections and start the epidemic, the
@@ -56,7 +56,7 @@ members.
     LEMON library, but is somewhat slower and has less features.  It
     should not be used.
 
-  - seeiir_h_force_recover_family :: This implements the same model as
+  - =seeiir_h_force_recover_family= :: This implements the same model as
     =seeiir_h=, the only difference is that when forcing some
     individuals to the ~R~ state, it will do so in a way that ensures
     that these forced recoveries belong to families where all members
