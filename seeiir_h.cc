@@ -878,7 +878,7 @@ void SEIRPopulation::force_recover(int R)  // Move aprox R individuals from S to
     node_data& nd=treemap[l1node];
     if (nd.S<nd.N) continue;  // Look for a family with all S
     // We want to sample uniformly in families, so we must reject some
-    if ( (double) fmin/nd.N  < uran() ) continue;
+    if ( fmin<nd.N && (double) fmin/nd.N  < uran() ) continue;
 
     int rec=nd.S;
     for (int i=0; i<rec; ++i) {
