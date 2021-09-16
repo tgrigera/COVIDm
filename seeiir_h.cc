@@ -660,7 +660,8 @@ void SEIRPopulation::compute_rates()
   for (node_t node: infected_nodes) {
     ev.node=node;
     node_data& noded=treemap[node];
-    double norm = noded.level >1 ? 1./(noded.N-1) : 1;
+    // double norm = noded.level >1 ? 1./(noded.N-1) : 1;
+    double norm = 1./(noded.N-1);
     cr += noded.S * rates.beta[noded.level] * (noded.I1 + noded.I2) * norm;
     cumrate.push_back(cr);
     events.push_back(ev);
