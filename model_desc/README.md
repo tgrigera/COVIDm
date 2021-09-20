@@ -127,7 +127,7 @@ individual <img src="svgs//77a3b857d53fb44e33b53e4c8b68351a.svg?invert_in_darkmo
 individuals of group <img src="svgs//4539837d61243d7054004fb10a411d9a.svg?invert_in_darkmode" align=middle width=20.89909469999999pt height=14.15524440000002pt/> in state <img src="svgs//cbfb1b2a33b28eab8a3e59464768e810.svg?invert_in_darkmode" align=middle width=14.908688849999992pt height=22.465723500000017pt/>, the transition rates
 are
 
-<p align="center"><img src="svgs//bf22c9135849d47f6cd01494b9ec9ca5.svg?invert_in_darkmode" align=middle width=477.3415845pt height=170.70283229999998pt/></p>
+<p align="center"><img src="svgs//c27f1ee56d6e9b1f453fdb232871394a.svg?invert_in_darkmode" align=middle width=274.78996379999995pt height=170.70283229999998pt/></p>
 
 The L+4 rate constants (<img src="svgs//bf9b6c39addb984a496459e55f667729.svg?invert_in_darkmode" align=middle width=71.51812799999999pt height=22.831056599999986pt/>, <img src="svgs//9811b1e861c58c0f72de45f573e7eea4.svg?invert_in_darkmode" align=middle width=15.94565279999999pt height=14.15524440000002pt/>,
 <img src="svgs//0318cc8a44e98dfa8db4cd5b6f731ed4.svg?invert_in_darkmode" align=middle width=15.94565279999999pt height=14.15524440000002pt/>, <img src="svgs//f4d2e02931a81ed37d695634192ebed9.svg?invert_in_darkmode" align=middle width=15.06318824999999pt height=14.15524440000002pt/>, <img src="svgs//b20edd7d59cbe61f6558fa4a05eaacea.svg?invert_in_darkmode" align=middle width=15.06318824999999pt height=14.15524440000002pt/>) are given at the end of the
